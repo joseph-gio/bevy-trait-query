@@ -9,6 +9,7 @@ use bevy_ecs::{
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 
+use crate::TraitImplMeta;
 use crate::{
     debug_unreachable, one::FetchStorage, zip_exact, OneTraitFetch, TraitQuery, TraitQueryState,
 };
@@ -22,26 +23,81 @@ use crate::{
 /// - `Query<One<&mut dyn Trait>>` yields a [`Mut`] object
 pub struct One<T>(pub T);
 
-unsafe impl<T: ?Sized + TraitQuery> QueryData for One<&T> {
+unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
     type ReadOnly = Self;
-}
-unsafe impl<T: ?Sized + TraitQuery> ReadOnlyQueryData for One<&T> {}
 
-unsafe impl<'a, T: ?Sized + TraitQuery> QueryData for One<&'a mut T> {
-    type ReadOnly = One<&'a T>;
-}
+    const IS_READ_ONLY: bool = true;
 
-// SAFETY: We only access the components registered in TraitQueryState.
-// This same set of components is used to match archetypes, and used to register world access.
-unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
     type Item<'w> = Ref<'w, Trait>;
-    type Fetch<'w> = OneTraitFetch<'w, Trait>;
-    type State = TraitQueryState<Trait>;
 
     #[inline]
     fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
         item
     }
+
+    #[inline]
+    unsafe fn fetch<'w>(
+        fetch: &mut Self::Fetch<'w>,
+        entity: Entity,
+        table_row: TableRow,
+    ) -> Self::Item<'w> {
+        let table_row = table_row.as_usize();
+        let (dyn_ctor, ptr, added, changed, location) = match fetch.storage {
+            // SAFETY: This function must have been called after `set_archetype`,
+            // so we know that `self.storage` has been initialized.
+            FetchStorage::Uninit => debug_unreachable(),
+            FetchStorage::Table {
+                column,
+                added_ticks,
+                changed_ticks,
+                location,
+                meta,
+            } => {
+                let ptr = column.byte_add(table_row * meta.size_bytes);
+                (
+                    meta.dyn_ctor,
+                    ptr,
+                    // SAFETY: We have read access to the component, so by extension
+                    // we have access to the corresponding `ComponentTicks`.
+                    added_ticks.get(table_row).deref(),
+                    changed_ticks.get(table_row).deref(),
+                    location,
+                )
+            }
+            FetchStorage::SparseSet { components, meta } => {
+                let (ptr, ticks, location) = components
+                    .get_with_ticks(entity)
+                    .unwrap_or_else(|| debug_unreachable());
+                (
+                    meta.dyn_ctor,
+                    ptr,
+                    // SAFETY: We have read access to the component, so by extension
+                    // we have access to the corresponding `ComponentTicks`.
+                    ticks.added.deref(),
+                    ticks.changed.deref(),
+                    location,
+                )
+            }
+        };
+
+        Ref::new(
+            dyn_ctor.cast(ptr),
+            added,
+            changed,
+            fetch.last_run,
+            fetch.this_run,
+            location.map(|loc| loc.deref()),
+        )
+    }
+}
+
+unsafe impl<Trait: ?Sized + TraitQuery> ReadOnlyQueryData for One<&Trait> {}
+
+// SAFETY: We only access the components registered in TraitQueryState.
+// This same set of components is used to match archetypes, and used to register world access.
+unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
+    type Fetch<'w> = OneTraitFetch<'w, Trait>;
+    type State = TraitQueryState<Trait>;
 
     #[inline]
     unsafe fn init_fetch<'w>(
@@ -74,20 +130,9 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
         // without loss of generality we use the zero-th row since we only care about whether the
         // component exists in the table
         let row = TableRow::from_usize(0);
-        for (&component, &meta) in zip_exact(&*state.components, &*state.meta) {
-            if let Some((ptr, added, changed)) =
-                table.get_component(component, row).and_then(|ptr| {
-                    let added = table.get_added_ticks_slice_for(component)?;
-                    let changed = table.get_changed_ticks_slice_for(component)?;
-                    Some((ptr, added, changed))
-                })
-            {
-                fetch.storage = FetchStorage::Table {
-                    column: ptr,
-                    added_ticks: added.into(),
-                    changed_ticks: changed.into(),
-                    meta,
-                };
+        for (&component_id, &meta) in zip_exact(&*state.components, &*state.meta) {
+            if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
+                fetch.storage = table_storage;
                 return;
             }
         }
@@ -115,76 +160,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
         // without loss of generality we use the zero-th row since we only care about whether the
         // component exists in the table
         let row = TableRow::from_usize(0);
-        for (&component, &meta) in std::iter::zip(&*state.components, &*state.meta) {
-            if let Some((ptr, added, changed)) =
-                table.get_component(component, row).and_then(|ptr| {
-                    let added = table.get_added_ticks_slice_for(component)?;
-                    let changed = table.get_changed_ticks_slice_for(component)?;
-                    Some((ptr, added, changed))
-                })
-            {
-                fetch.storage = FetchStorage::Table {
-                    column: ptr,
-                    added_ticks: added.into(),
-                    changed_ticks: changed.into(),
-                    meta,
-                }
+        for (&component_id, &meta) in std::iter::zip(&*state.components, &*state.meta) {
+            if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
+                fetch.storage = table_storage;
+                return;
             }
         }
         // At least one of the components must be present in the table.
         debug_unreachable()
-    }
-
-    #[inline]
-    unsafe fn fetch<'w>(
-        fetch: &mut Self::Fetch<'w>,
-        entity: Entity,
-        table_row: TableRow,
-    ) -> Self::Item<'w> {
-        let table_row = table_row.as_usize();
-        let dyn_ctor;
-        let (ptr, added, changed) = match fetch.storage {
-            // SAFETY: This function must have been called after `set_archetype`,
-            // so we know that `self.storage` has been initialized.
-            FetchStorage::Uninit => debug_unreachable(),
-            FetchStorage::Table {
-                column,
-                added_ticks,
-                changed_ticks,
-                meta,
-            } => {
-                dyn_ctor = meta.dyn_ctor;
-                let ptr = column.byte_add(table_row * meta.size_bytes);
-                (
-                    ptr,
-                    // SAFETY: We have read access to the component, so by extension
-                    // we have access to the corresponding `ComponentTicks`.
-                    added_ticks.get(table_row).deref(),
-                    changed_ticks.get(table_row).deref(),
-                )
-            }
-            FetchStorage::SparseSet { components, meta } => {
-                dyn_ctor = meta.dyn_ctor;
-                let (ptr, ticks, _) = components
-                    .get_with_ticks(entity)
-                    .unwrap_or_else(|| debug_unreachable());
-                (
-                    ptr,
-                    // SAFETY: We have read access to the component, so by extension
-                    // we have access to the corresponding `ComponentTicks`.
-                    ticks.added.deref(),
-                    ticks.changed.deref(),
-                )
-            }
-        };
-
-        Ref::new(
-            dyn_ctor.cast(ptr),
-            added,
-            changed,
-            fetch.last_run,
-            fetch.this_run,
-        )
     }
 
     #[inline]
@@ -239,17 +222,85 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
     }
 }
 
-// SAFETY: We only access the components registered in TraitQueryState.
-// This same set of components is used to match archetypes, and used to register world access.
-unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
+unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
+    type ReadOnly = One<&'a Trait>;
+
+    const IS_READ_ONLY: bool = false;
+
     type Item<'w> = Mut<'w, Trait>;
-    type Fetch<'w> = OneTraitFetch<'w, Trait>;
-    type State = TraitQueryState<Trait>;
 
     #[inline]
     fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
         item
     }
+
+    #[inline]
+    unsafe fn fetch<'w>(
+        fetch: &mut Self::Fetch<'w>,
+        entity: Entity,
+        table_row: TableRow,
+    ) -> Mut<'w, Trait> {
+        let table_row = table_row.as_usize();
+        let (dyn_ctor, ptr, added, changed, location) = match fetch.storage {
+            // SAFETY: This function must have been called after `set_archetype`,
+            // so we know that `self.storage` has been initialized.
+            FetchStorage::Uninit => debug_unreachable(),
+            FetchStorage::Table {
+                column,
+                added_ticks,
+                changed_ticks,
+                location,
+                meta,
+            } => {
+                let ptr = column.byte_add(table_row * meta.size_bytes);
+                (
+                    meta.dyn_ctor,
+                    // SAFETY: `column` allows for shared mutable access.
+                    // So long as the caller does not invoke this function twice with the same archetype_index,
+                    // this pointer will never be aliased.
+                    ptr.assert_unique(),
+                    // SAFETY: We have exclusive access to the component, so by extension
+                    // we have exclusive access to the corresponding `ComponentTicks`.
+                    added_ticks.get(table_row).deref_mut(),
+                    changed_ticks.get(table_row).deref_mut(),
+                    location,
+                )
+            }
+            FetchStorage::SparseSet { components, meta } => {
+                let (ptr, ticks, location) = components
+                    .get_with_ticks(entity)
+                    .unwrap_or_else(|| debug_unreachable());
+                (
+                    meta.dyn_ctor,
+                    // SAFETY: We have exclusive access to the sparse set `components`.
+                    // So long as the caller does not invoke this function twice with the same archetype_index,
+                    // this pointer will never be aliased.
+                    ptr.assert_unique(),
+                    // SAFETY: We have exclusive access to the component, so by extension
+                    // we have exclusive access to the corresponding `ComponentTicks`.
+                    ticks.added.deref_mut(),
+                    ticks.changed.deref_mut(),
+                    location,
+                )
+            }
+        };
+
+        Mut::new(
+            dyn_ctor.cast_mut(ptr),
+            added,
+            changed,
+            fetch.last_run,
+            fetch.this_run,
+            location.map(|loc| loc.deref_mut()),
+        )
+    }
+}
+
+// SAFETY: We only access the components registered in TraitQueryState.
+// This same set of components is used to match archetypes, and used to register world access.
+unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
+    type Fetch<'w> = OneTraitFetch<'w, Trait>;
+    type State = TraitQueryState<Trait>;
 
     #[inline]
     unsafe fn init_fetch<'w>(
@@ -280,20 +331,9 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
         // without loss of generality we use the zero-th row since we only care about whether the
         // component exists in the table
         let row = TableRow::from_usize(0);
-        for (&component, &meta) in zip_exact(&*state.components, &*state.meta) {
-            if let Some((ptr, added, changed)) =
-                table.get_component(component, row).and_then(|ptr| {
-                    let added = table.get_added_ticks_slice_for(component)?;
-                    let changed = table.get_changed_ticks_slice_for(component)?;
-                    Some((ptr, added, changed))
-                })
-            {
-                fetch.storage = FetchStorage::Table {
-                    column: ptr,
-                    added_ticks: added.into(),
-                    changed_ticks: changed.into(),
-                    meta,
-                };
+        for (&component_id, &meta) in zip_exact(&*state.components, &*state.meta) {
+            if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
+                fetch.storage = table_storage;
                 return;
             }
         }
@@ -321,83 +361,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
         // without loss of generality we use the zero-th row since we only care about whether the
         // component exists in the table
         let row = TableRow::from_usize(0);
-        for (&component, &meta) in std::iter::zip(&*state.components, &*state.meta) {
-            if let Some((ptr, added, changed)) =
-                table.get_component(component, row).and_then(|ptr| {
-                    let added = table.get_added_ticks_slice_for(component)?;
-                    let changed = table.get_changed_ticks_slice_for(component)?;
-                    Some((ptr, added, changed))
-                })
-            {
-                fetch.storage = FetchStorage::Table {
-                    column: ptr,
-                    added_ticks: added.into(),
-                    changed_ticks: changed.into(),
-                    meta,
-                };
+        for (&component_id, &meta) in std::iter::zip(&*state.components, &*state.meta) {
+            if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
+                fetch.storage = table_storage;
                 return;
             }
         }
         // At least one of the components must be present in the table.
         debug_unreachable()
-    }
-
-    #[inline]
-    unsafe fn fetch<'w>(
-        fetch: &mut Self::Fetch<'w>,
-        entity: Entity,
-        table_row: TableRow,
-    ) -> Mut<'w, Trait> {
-        let table_row = table_row.as_usize();
-        let dyn_ctor;
-        let (ptr, added, changed) = match fetch.storage {
-            // SAFETY: This function must have been called after `set_archetype`,
-            // so we know that `self.storage` has been initialized.
-            FetchStorage::Uninit => debug_unreachable(),
-            FetchStorage::Table {
-                column,
-                added_ticks,
-                changed_ticks,
-                meta,
-            } => {
-                dyn_ctor = meta.dyn_ctor;
-                let ptr = column.byte_add(table_row * meta.size_bytes);
-                (
-                    // SAFETY: `column` allows for shared mutable access.
-                    // So long as the caller does not invoke this function twice with the same archetype_index,
-                    // this pointer will never be aliased.
-                    ptr.assert_unique(),
-                    // SAFETY: We have exclusive access to the component, so by extension
-                    // we have exclusive access to the corresponding `ComponentTicks`.
-                    added_ticks.get(table_row).deref_mut(),
-                    changed_ticks.get(table_row).deref_mut(),
-                )
-            }
-            FetchStorage::SparseSet { components, meta } => {
-                dyn_ctor = meta.dyn_ctor;
-                let (ptr, ticks, _) = components
-                    .get_with_ticks(entity)
-                    .unwrap_or_else(|| debug_unreachable());
-                (
-                    // SAFETY: We have exclusive access to the sparse set `components`.
-                    // So long as the caller does not invoke this function twice with the same archetype_index,
-                    // this pointer will never be aliased.
-                    ptr.assert_unique(),
-                    // SAFETY: We have exclusive access to the component, so by extension
-                    // we have exclusive access to the corresponding `ComponentTicks`.
-                    ticks.added.deref_mut(),
-                    ticks.changed.deref_mut(),
-                )
-            }
-        };
-
-        Mut::new(
-            dyn_ctor.cast_mut(ptr),
-            added,
-            changed,
-            fetch.last_run,
-            fetch.this_run,
-        )
     }
 
     #[inline]
@@ -450,4 +421,25 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
     fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
         fetch
     }
+}
+
+// gets all the relevant data repeatingly used for the table storage
+#[inline]
+unsafe fn get_table_fetch_data<Trait: ?Sized + TraitQuery>(
+    table: &bevy_ecs::storage::Table,
+    component_id: ComponentId,
+    row: TableRow,
+    meta: TraitImplMeta<Trait>,
+) -> Option<FetchStorage<Trait>> {
+    let ptr = table.get_component(component_id, row)?;
+    let location = table.get_changed_by(component_id, row).transpose()?;
+    let added = table.get_added_ticks_slice_for(component_id)?;
+    let changed = table.get_changed_ticks_slice_for(component_id)?;
+    Some(FetchStorage::Table {
+        column: ptr,
+        added_ticks: added.into(),
+        changed_ticks: changed.into(),
+        location,
+        meta,
+    })
 }

@@ -52,7 +52,7 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for ReadTableTraitsIter<'a, Trait>
     fn next(&mut self) -> Option<Self::Item> {
         // Iterate the remaining table components that are registered,
         // until we find one that exists in the table.
-        let (ptr, component, meta) = unsafe { zip_exact(&mut self.components, &mut self.meta) }
+        let (ptr, component_id, meta) = unsafe { zip_exact(&mut self.components, &mut self.meta) }
             .find_map(|(&component, meta)| {
                 // SAFETY: we know that the `table_row` is a valid index.
                 let ptr = unsafe { self.table.get_component(component, self.table_row) }?;
@@ -64,13 +64,19 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for ReadTableTraitsIter<'a, Trait>
         // Read access has been registered, so we can dereference it immutably.
         let added_tick = unsafe {
             self.table
-                .get_added_tick(component, self.table_row)?
+                .get_added_tick(component_id, self.table_row)?
                 .deref()
         };
         let changed_tick = unsafe {
             self.table
-                .get_changed_tick(component, self.table_row)?
+                .get_changed_tick(component_id, self.table_row)?
                 .deref()
+        };
+        let location = unsafe {
+            self.table
+                .get_changed_by(component_id, self.table_row)
+                .transpose()?
+                .map(|loc| loc.deref())
         };
 
         Some(Ref::new(
@@ -79,6 +85,7 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for ReadTableTraitsIter<'a, Trait>
             changed_tick,
             self.last_run,
             self.this_run,
+            location,
         ))
     }
 }
@@ -100,12 +107,14 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for ReadSparseTraitsIter<'a, Trait
     fn next(&mut self) -> Option<Self::Item> {
         // Iterate the remaining sparse set components that are registered,
         // until we find one that exists in the archetype.
-        let (ptr, ticks_ptr, meta) = unsafe { zip_exact(&mut self.components, &mut self.meta) }
-            .find_map(|(&component, meta)| {
-                let set = self.sparse_sets.get(component)?;
-                let (ptr, ticks, _) = set.get_with_ticks(self.entity)?;
-                Some((ptr, ticks, meta))
-            })?;
+        let (ptr, ticks_ptr, meta, location) =
+            unsafe { zip_exact(&mut self.components, &mut self.meta) }.find_map(
+                |(&component, meta)| {
+                    let set = self.sparse_sets.get(component)?;
+                    let (ptr, ticks, location) = set.get_with_ticks(self.entity)?;
+                    Some((ptr, ticks, meta, location))
+                },
+            )?;
         let trait_object = unsafe { meta.dyn_ctor.cast(ptr) };
         let added_tick = unsafe { ticks_ptr.added.deref() };
         let changed_tick = unsafe { ticks_ptr.changed.deref() };
@@ -115,6 +124,7 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for ReadSparseTraitsIter<'a, Trait
             changed_tick,
             self.last_run,
             self.this_run,
+            location.map(|loc| unsafe { loc.deref() }),
         ))
     }
 }

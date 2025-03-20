@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bevy_ecs::{
     component::{ComponentId, Components, Tick},
     prelude::{Entity, World},
-    query::{QueryFilter, QueryItem, WorldQuery},
+    query::{ArchetypeFilter, QueryFilter, WorldQuery},
     storage::TableRow,
     world::unsafe_world_cell::UnsafeWorldCell,
 };
@@ -16,14 +16,8 @@ pub struct WithOne<Trait: ?Sized + TraitQuery>(PhantomData<&'static Trait>);
 
 // this takes inspiration from `With` in bevy's main repo
 unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
-    type Item<'w> = ();
     type Fetch<'w> = ();
     type State = TraitQueryState<Trait>;
-
-    #[inline]
-    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
-        item
-    }
 
     #[inline]
     unsafe fn init_fetch(
@@ -47,14 +41,6 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
 
     #[inline]
     unsafe fn set_table(_fetch: &mut (), _state: &Self::State, _table: &bevy_ecs::storage::Table) {}
-
-    #[inline]
-    unsafe fn fetch<'w>(
-        _fetch: &mut Self::Fetch<'w>,
-        _entity: Entity,
-        _table_row: TableRow,
-    ) -> Self::Item<'w> {
-    }
 
     #[inline]
     fn update_component_access(
@@ -90,10 +76,11 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
     }
 
     #[inline]
-    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
-        fetch
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(_fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
     }
 }
+
+impl<Trait: ?Sized + TraitQuery> ArchetypeFilter for WithOne<Trait> {}
 
 /// SAFETY: read-only access
 unsafe impl<Trait: ?Sized + TraitQuery> QueryFilter for WithOne<Trait> {

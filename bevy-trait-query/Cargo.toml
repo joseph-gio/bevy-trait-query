@@ -10,14 +10,13 @@ keywords = ["bevy", "gamedev", "plugin", "query", "trait"]
 categories = ["game-development"]
 
 [features]
-default = ["bevy_app", "bevy_core"]
+default = ["bevy_app"]
 
 [dependencies]
 bevy-trait-query-impl.workspace = true
 tracing.workspace = true
 bevy_ecs.workspace = true
 bevy_app = { workspace = true, optional = true}
-bevy_core = { workspace = true, optional = true}
 
 [dev-dependencies]
 criterion.workspace = true

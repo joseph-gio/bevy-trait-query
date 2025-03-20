@@ -20,14 +20,43 @@ pub struct OneAdded<Trait: ?Sized + TraitQuery> {
     marker: PhantomData<&'static Trait>,
 }
 
-unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneAdded<Trait> {
+unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneAdded<Trait> {
+    type ReadOnly = Self;
+
+    const IS_READ_ONLY: bool = true;
+
     type Item<'w> = bool;
-    type Fetch<'w> = ChangeDetectionFetch<'w>;
-    type State = TraitQueryState<Trait>;
 
     fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
         item
     }
+
+    #[inline(always)]
+    unsafe fn fetch<'w>(
+        fetch: &mut Self::Fetch<'w>,
+        entity: Entity,
+        table_row: TableRow,
+    ) -> Self::Item<'w> {
+        let ticks_ptr = match fetch.storage {
+            ChangeDetectionStorage::Uninit => {
+                // set_archetype must have been called already
+                debug_unreachable()
+            }
+            ChangeDetectionStorage::Table { ticks } => ticks.get(table_row.as_usize()),
+            ChangeDetectionStorage::SparseSet { components } => components
+                .get_added_tick(entity)
+                .unwrap_or_else(|| debug_unreachable()),
+        };
+
+        (*ticks_ptr)
+            .deref()
+            .is_newer_than(fetch.last_run, fetch.this_run)
+    }
+}
+
+unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneAdded<Trait> {
+    type Fetch<'w> = ChangeDetectionFetch<'w>;
+    type State = TraitQueryState<Trait>;
 
     unsafe fn init_fetch<'w>(
         world: UnsafeWorldCell<'w>,
@@ -80,28 +109,6 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneAdded<Trait> {
         debug_unreachable()
     }
 
-    #[inline(always)]
-    unsafe fn fetch<'w>(
-        fetch: &mut Self::Fetch<'w>,
-        entity: Entity,
-        table_row: TableRow,
-    ) -> Self::Item<'w> {
-        let ticks_ptr = match fetch.storage {
-            ChangeDetectionStorage::Uninit => {
-                // set_archetype must have been called already
-                debug_unreachable()
-            }
-            ChangeDetectionStorage::Table { ticks } => ticks.get(table_row.as_usize()),
-            ChangeDetectionStorage::SparseSet { components } => components
-                .get_added_tick(entity)
-                .unwrap_or_else(|| debug_unreachable()),
-        };
-
-        (*ticks_ptr)
-            .deref()
-            .is_newer_than(fetch.last_run, fetch.this_run)
-    }
-
     #[inline]
     fn update_component_access(state: &Self::State, access: &mut FilteredAccess<ComponentId>) {
         let mut new_access = access.clone();
@@ -150,9 +157,6 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneAdded<Trait> {
     }
 }
 
-unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneAdded<Trait> {
-    type ReadOnly = Self;
-}
 /// SAFETY: read-only access
 unsafe impl<Trait: ?Sized + TraitQuery> ReadOnlyQueryData for OneAdded<Trait> {}
 unsafe impl<Trait: ?Sized + TraitQuery> QueryFilter for OneAdded<Trait> {
@@ -162,6 +166,6 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryFilter for OneAdded<Trait> {
         entity: Entity,
         table_row: TableRow,
     ) -> bool {
-        <Self as WorldQuery>::fetch(fetch, entity, table_row)
+        <Self as QueryData>::fetch(fetch, entity, table_row)
     }
 }

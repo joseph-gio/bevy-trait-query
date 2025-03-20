@@ -152,6 +152,30 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
         #where_clause
         {
             type ReadOnly = Self;
+
+            const IS_READ_ONLY: bool = true;
+
+            type Item<'__w> = #my_crate::ReadTraits<'__w, #trait_object>;
+
+            #[inline]
+            fn shrink<'wlong: 'wshort, 'wshort>(
+                item: Self::Item<'wlong>,
+            ) -> Self::Item<'wshort> {
+                item
+            }
+
+            #[inline]
+            unsafe fn fetch<'w>(
+                fetch: &mut Self::Fetch<'w>,
+                entity: #imports::Entity,
+                table_row: #imports::TableRow,
+            ) -> Self::Item<'w> {
+                <#my_crate::All<&#trait_object> as #imports::QueryData>::fetch(
+                    fetch,
+                    entity,
+                    table_row,
+                )
+            }
         }
         unsafe impl #impl_generics #imports::ReadOnlyQueryData for &#trait_object
         #where_clause
@@ -160,7 +184,6 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
         unsafe impl #impl_generics_with_lifetime #imports::WorldQuery for &'__a #trait_object
         #where_clause
         {
-            type Item<'__w> = #my_crate::ReadTraits<'__w, #trait_object>;
             type Fetch<'__w> = <#my_crate::All<&'__a #trait_object> as #imports::WorldQuery>::Fetch<'__w>;
             type State = #my_crate::TraitQueryState<#trait_object>;
 
@@ -177,13 +200,6 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
                     last_run,
                     this_run,
                 )
-            }
-
-            #[inline]
-            fn shrink<'wlong: 'wshort, 'wshort>(
-                item: Self::Item<'wlong>,
-            ) -> Self::Item<'wshort> {
-                item
             }
 
             const IS_DENSE: bool = <#my_crate::All<&#trait_object> as #imports::WorldQuery>::IS_DENSE;
@@ -207,19 +223,6 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
                 table: &'w #imports::Table,
             ) {
                 <#my_crate::All<&#trait_object> as #imports::WorldQuery>::set_table(fetch, state, table);
-            }
-
-            #[inline]
-            unsafe fn fetch<'w>(
-                fetch: &mut Self::Fetch<'w>,
-                entity: #imports::Entity,
-                table_row: #imports::TableRow,
-            ) -> Self::Item<'w> {
-                <#my_crate::All<&#trait_object> as #imports::WorldQuery>::fetch(
-                    fetch,
-                    entity,
-                    table_row,
-                )
             }
 
             #[inline]
@@ -261,12 +264,35 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
         #where_clause
         {
             type ReadOnly = &'__a #trait_object;
+
+            type Item<'__w> = #my_crate::WriteTraits<'__w, #trait_object>;
+
+            const IS_READ_ONLY: bool = false;
+
+            #[inline]
+            fn shrink<'wlong: 'wshort, 'wshort>(
+                item: Self::Item<'wlong>,
+            ) -> Self::Item<'wshort> {
+                item
+            }
+
+            #[inline]
+            unsafe fn fetch<'w>(
+                fetch: &mut Self::Fetch<'w>,
+                entity: #imports::Entity,
+                table_row: #imports::TableRow,
+            ) -> Self::Item<'w> {
+                <#my_crate::All<&mut #trait_object> as #imports::QueryData>::fetch(
+                    fetch,
+                    entity,
+                    table_row,
+                )
+            }
         }
 
         unsafe impl #impl_generics_with_lifetime #imports::WorldQuery for &'__a mut #trait_object
         #where_clause
         {
-            type Item<'__w> = #my_crate::WriteTraits<'__w, #trait_object>;
             type Fetch<'__w> = <#my_crate::All<&'__a #trait_object> as #imports::WorldQuery>::Fetch<'__w>;
             type State = #my_crate::TraitQueryState<#trait_object>;
 
@@ -283,13 +309,6 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
                     last_run,
                     this_run,
                 )
-            }
-
-            #[inline]
-            fn shrink<'wlong: 'wshort, 'wshort>(
-                item: Self::Item<'wlong>,
-            ) -> Self::Item<'wshort> {
-                item
             }
 
             const IS_DENSE: bool = <#my_crate::All<&mut #trait_object> as #imports::WorldQuery>::IS_DENSE;
@@ -313,19 +332,6 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
                 table: &'w #imports::Table,
             ) {
                 <#my_crate::All<&mut #trait_object> as #imports::WorldQuery>::set_table(fetch, state, table);
-            }
-
-            #[inline]
-            unsafe fn fetch<'w>(
-                fetch: &mut Self::Fetch<'w>,
-                entity: #imports::Entity,
-                table_row: #imports::TableRow,
-            ) -> Self::Item<'w> {
-                <#my_crate::All<&mut #trait_object> as #imports::WorldQuery>::fetch(
-                    fetch,
-                    entity,
-                    table_row,
-                )
             }
 
             #[inline]

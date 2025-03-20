@@ -28,6 +28,33 @@ pub struct All<T: ?Sized>(T);
 
 unsafe impl<Trait: ?Sized + TraitQuery> QueryData for All<&Trait> {
     type ReadOnly = Self;
+
+    const IS_READ_ONLY: bool = true;
+
+    type Item<'w> = ReadTraits<'w, Trait>;
+
+    #[inline]
+    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
+        item
+    }
+
+    #[inline]
+    unsafe fn fetch<'w>(
+        fetch: &mut Self::Fetch<'w>,
+        _entity: Entity,
+        table_row: TableRow,
+    ) -> Self::Item<'w> {
+        let table = fetch.table.unwrap_or_else(|| debug_unreachable());
+
+        ReadTraits {
+            registry: fetch.registry,
+            table,
+            table_row,
+            sparse_sets: fetch.sparse_sets,
+            last_run: fetch.last_run,
+            this_run: fetch.this_run,
+        }
+    }
 }
 unsafe impl<Trait: ?Sized + TraitQuery> ReadOnlyQueryData for All<&Trait> {}
 
@@ -35,14 +62,8 @@ unsafe impl<Trait: ?Sized + TraitQuery> ReadOnlyQueryData for All<&Trait> {}
 // This is known to match the set of components in the TraitQueryState,
 // which is used to match archetypes and register world access.
 unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
-    type Item<'w> = ReadTraits<'w, Trait>;
     type Fetch<'w> = AllTraitsFetch<'w, Trait>;
     type State = TraitQueryState<Trait>;
-
-    #[inline]
-    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
-        item
-    }
 
     #[inline]
     unsafe fn init_fetch<'w>(
@@ -80,24 +101,6 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
         table: &'w bevy_ecs::storage::Table,
     ) {
         fetch.table = Some(table);
-    }
-
-    #[inline]
-    unsafe fn fetch<'w>(
-        fetch: &mut Self::Fetch<'w>,
-        _entity: Entity,
-        table_row: TableRow,
-    ) -> Self::Item<'w> {
-        let table = fetch.table.unwrap_or_else(|| debug_unreachable());
-
-        ReadTraits {
-            registry: fetch.registry,
-            table,
-            table_row,
-            sparse_sets: fetch.sparse_sets,
-            last_run: fetch.last_run,
-            this_run: fetch.this_run,
-        }
     }
 
     #[inline]
@@ -154,20 +157,41 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
 
 unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for All<&'a mut Trait> {
     type ReadOnly = All<&'a Trait>;
+
+    const IS_READ_ONLY: bool = false;
+
+    type Item<'w> = WriteTraits<'w, Trait>;
+
+    #[inline]
+    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
+        item
+    }
+
+    #[inline]
+    unsafe fn fetch<'w>(
+        fetch: &mut Self::Fetch<'w>,
+        _entity: Entity,
+        table_row: TableRow,
+    ) -> Self::Item<'w> {
+        let table = fetch.table.unwrap_or_else(|| debug_unreachable());
+
+        WriteTraits {
+            registry: fetch.registry,
+            table,
+            table_row,
+            sparse_sets: fetch.sparse_sets,
+            last_run: fetch.last_run,
+            this_run: fetch.this_run,
+        }
+    }
 }
 
 // SAFETY: We only access the components registered in the trait registry.
 // This is known to match the set of components in the TraitQueryState,
 // which is used to match archetypes and register world access.
 unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&mut Trait> {
-    type Item<'w> = WriteTraits<'w, Trait>;
     type Fetch<'w> = AllTraitsFetch<'w, Trait>;
     type State = TraitQueryState<Trait>;
-
-    #[inline]
-    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
-        item
-    }
 
     #[inline]
     unsafe fn init_fetch<'w>(
@@ -206,24 +230,6 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&mut Trait> {
         table: &'w bevy_ecs::storage::Table,
     ) {
         fetch.table = Some(table);
-    }
-
-    #[inline]
-    unsafe fn fetch<'w>(
-        fetch: &mut Self::Fetch<'w>,
-        _entity: Entity,
-        table_row: TableRow,
-    ) -> Self::Item<'w> {
-        let table = fetch.table.unwrap_or_else(|| debug_unreachable());
-
-        WriteTraits {
-            registry: fetch.registry,
-            table,
-            table_row,
-            sparse_sets: fetch.sparse_sets,
-            last_run: fetch.last_run,
-            this_run: fetch.this_run,
-        }
     }
 
     #[inline]

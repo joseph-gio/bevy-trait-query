@@ -1,6 +1,5 @@
 #![allow(clippy::all)]
 
-use bevy_core::Name;
 use bevy_ecs::prelude::*;
 use bevy_trait_query::*;
 use criterion::*;
