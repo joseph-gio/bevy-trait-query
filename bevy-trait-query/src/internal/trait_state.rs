@@ -2,8 +2,8 @@ use bevy_ecs::component::ComponentId;
 use bevy_ecs::prelude::World;
 
 use crate::{
-    trait_registry::{TraitImplMeta, TraitImplRegistry},
     TraitQuery,
+    trait_registry::{TraitImplMeta, TraitImplRegistry},
 };
 
 #[doc(hidden)]

@@ -7,8 +7,8 @@ use bevy_ecs::{
 };
 
 use crate::{
-    zip_exact, CombinedReadTraitsIter, ReadSparseTraitsIter, ReadTableTraitsIter, TraitImplMeta,
-    TraitImplRegistry, TraitQuery,
+    CombinedReadTraitsIter, ReadSparseTraitsIter, ReadTableTraitsIter, TraitImplMeta,
+    TraitImplRegistry, TraitQuery, zip_exact,
 };
 
 /// Write-access to all components implementing a trait for a given entity.

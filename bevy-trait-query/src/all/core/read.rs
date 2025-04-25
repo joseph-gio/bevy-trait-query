@@ -6,7 +6,7 @@ use bevy_ecs::{
     storage::{SparseSets, Table, TableRow},
 };
 
-use crate::{zip_exact, TraitImplMeta, TraitImplRegistry, TraitQuery};
+use crate::{TraitImplMeta, TraitImplRegistry, TraitQuery, zip_exact};
 
 /// Read-access to all components implementing a trait for a given entity.
 ///

@@ -10,7 +10,7 @@ use bevy_ecs::{
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 
-use crate::{debug_unreachable, TraitQuery, TraitQueryState};
+use crate::{TraitQuery, TraitQueryState, debug_unreachable};
 
 use crate::{ChangeDetectionFetch, ChangeDetectionStorage};
 
@@ -150,7 +150,9 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneChanged<Trait> {
     #[inline]
     fn get_state(_: &Components) -> Option<Self::State> {
         // TODO: fix this https://github.com/bevyengine/bevy/issues/13798
-        panic!("transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59");
+        panic!(
+            "transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59"
+        );
     }
 
     fn matches_component_set(

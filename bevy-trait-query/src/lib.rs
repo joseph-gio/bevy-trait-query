@@ -284,7 +284,7 @@ pub mod imports {
             ReadOnlyQueryData, WorldQuery,
         },
         storage::{Table, TableRow},
-        world::{unsafe_world_cell::UnsafeWorldCell, World},
+        world::{World, unsafe_world_cell::UnsafeWorldCell},
     };
 }
 
@@ -301,5 +301,7 @@ unsafe fn debug_unreachable() -> ! {
 #[inline(never)]
 #[cold]
 fn trait_registry_error() -> ! {
-    panic!("The trait query registry has not been initialized; did you forget to register your traits with the world?")
+    panic!(
+        "The trait query registry has not been initialized; did you forget to register your traits with the world?"
+    )
 }

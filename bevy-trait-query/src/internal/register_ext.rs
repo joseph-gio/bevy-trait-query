@@ -1,5 +1,5 @@
 use crate::{
-    dyn_constructor::DynCtor, TraitImplMeta, TraitImplRegistry, TraitQuery, TraitQueryMarker,
+    TraitImplMeta, TraitImplRegistry, TraitQuery, TraitQueryMarker, dyn_constructor::DynCtor,
 };
 use bevy_ecs::prelude::{Component, World};
 

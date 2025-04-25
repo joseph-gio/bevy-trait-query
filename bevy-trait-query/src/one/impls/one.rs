@@ -11,7 +11,7 @@ use bevy_ecs::{
 
 use crate::TraitImplMeta;
 use crate::{
-    debug_unreachable, one::FetchStorage, zip_exact, OneTraitFetch, TraitQuery, TraitQueryState,
+    OneTraitFetch, TraitQuery, TraitQueryState, debug_unreachable, one::FetchStorage, zip_exact,
 };
 
 /// [`WorldQuery`] adapter that fetches entities with exactly one component implementing a trait.
@@ -213,7 +213,9 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
     #[inline]
     fn get_state(_: &Components) -> Option<Self::State> {
         // TODO: fix this https://github.com/bevyengine/bevy/issues/13798
-        panic!("transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59");
+        panic!(
+            "transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59"
+        );
     }
 
     #[inline]
@@ -422,7 +424,9 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
     #[inline]
     fn get_state(_: &Components) -> Option<Self::State> {
         // TODO: fix this https://github.com/bevyengine/bevy/issues/13798
-        panic!("transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59");
+        panic!(
+            "transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59"
+        );
     }
 
     #[inline]

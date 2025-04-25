@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{format_ident, quote};
-use syn::{parse_quote, ItemTrait, Result, TraitItem};
+use syn::{ItemTrait, Result, TraitItem, parse_quote};
 
 /// When added to a trait declaration, generates the impls required to use that trait in queries.
 ///

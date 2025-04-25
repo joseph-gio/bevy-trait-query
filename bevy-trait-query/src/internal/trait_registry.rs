@@ -1,5 +1,5 @@
-use crate::dyn_constructor::DynCtor;
 use crate::TraitQuery;
+use crate::dyn_constructor::DynCtor;
 use bevy_ecs::component::{Component, ComponentId, StorageType};
 use bevy_ecs::prelude::Resource;
 #[derive(Resource)]

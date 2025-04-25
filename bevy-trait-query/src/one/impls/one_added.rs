@@ -11,7 +11,7 @@ use bevy_ecs::{
 };
 
 use crate::{
-    debug_unreachable, ChangeDetectionFetch, ChangeDetectionStorage, TraitQuery, TraitQueryState,
+    ChangeDetectionFetch, ChangeDetectionStorage, TraitQuery, TraitQueryState, debug_unreachable,
 };
 
 /// [`WorldQuery`] filter for entities with exactly [one](crate::One) component
@@ -149,7 +149,9 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneAdded<Trait> {
     #[inline]
     fn get_state(_: &Components) -> Option<Self::State> {
         // TODO: fix this https://github.com/bevyengine/bevy/issues/13798
-        panic!("transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59");
+        panic!(
+            "transmuting and any other operations concerning the state of a query are currently broken and shouldn't be used. See https://github.com/JoJoJet/bevy-trait-query/issues/59"
+        );
     }
 
     fn matches_component_set(
