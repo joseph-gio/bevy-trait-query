@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.16 (Bevy 0.16)
+
+* Added support for Bevy 0.16.
+
 ## Version 0.7 (Bevy 0.15)
 
 * Added support for Bevy 0.15.
