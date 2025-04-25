@@ -1,6 +1,6 @@
 [package]
 name = "bevy-trait-query-impl"
-version = "0.7.0"
+version = "0.16.0"
 edition.workspace = true
 
 description = "Procedural macro for `bevy-trait-query`"
