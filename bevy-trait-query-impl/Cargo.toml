@@ -1,7 +1,7 @@
 [package]
 name = "bevy-trait-query-impl"
 version = "0.7.0"
-edition = "2021"
+edition.workspace = true
 
 description = "Procedural macro for `bevy-trait-query`"
 repository = "https://github.com/JoJoJet/bevy-trait-query/"

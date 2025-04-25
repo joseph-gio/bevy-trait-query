@@ -1,7 +1,7 @@
 [package]
 name = "bevy-trait-query"
 version = "0.7.0"
-edition = "2021"
+edition.workspace = true
 
 description = "Implementation of trait queries for the bevy game engine"
 repository = "https://github.com/JoJoJet/bevy-trait-query/"

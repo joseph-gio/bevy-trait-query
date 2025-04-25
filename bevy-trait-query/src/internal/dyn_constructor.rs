@@ -16,10 +16,10 @@ impl<T: ?Sized> Clone for DynCtor<T> {
 impl<Trait: ?Sized> DynCtor<Trait> {
     #[inline]
     pub(crate) unsafe fn cast(self, ptr: Ptr) -> &Trait {
-        &*(self.cast)(ptr.as_ptr())
+        unsafe { &*(self.cast)(ptr.as_ptr()) }
     }
     #[inline]
     pub(crate) unsafe fn cast_mut(self, ptr: PtrMut) -> &mut Trait {
-        &mut *(self.cast)(ptr.as_ptr())
+        unsafe { &mut *(self.cast)(ptr.as_ptr()) }
     }
 }

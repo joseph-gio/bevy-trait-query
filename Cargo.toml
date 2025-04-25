@@ -1,9 +1,12 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
   "bevy-trait-query",
   "bevy-trait-query-impl"
 ]
+
+[workspace.package]
+edition = "2024"
 
 [workspace.dependencies]
 tracing = "0.1"
