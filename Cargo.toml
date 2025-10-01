@@ -19,4 +19,4 @@ syn                   = { features = ["full"], version = "2" }
 
 # dev deps
 bevy      = { default-features = false, version = "0.16.0" }
-criterion = "0.5"
+criterion = "0.7"
