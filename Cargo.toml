@@ -1,25 +1,22 @@
 [workspace]
+members  = ["bevy-trait-query", "bevy-trait-query-impl"]
 resolver = "3"
-members = [
-  "bevy-trait-query",
-  "bevy-trait-query-impl"
-]
 
 [workspace.package]
 edition = "2024"
 
 [workspace.dependencies]
-tracing = "0.1"
-bevy_ecs = "0.16.0"
 bevy_app = "0.16.0"
+bevy_ecs = "0.16.0"
+tracing  = "0.1"
 
 # proc macro
-bevy-trait-query-impl = { version = "0.16.0", path = "./bevy-trait-query-impl" }
-proc-macro2 = "1"
-syn = { version = "2", features = ["full"] }
-quote = "1"
-proc-macro-crate = "3"
+bevy-trait-query-impl = { path = "./bevy-trait-query-impl", version = "0.16.0" }
+proc-macro-crate      = "3"
+proc-macro2           = "1"
+quote                 = "1"
+syn                   = { features = ["full"], version = "2" }
 
 # dev deps
+bevy      = { default-features = false, version = "0.16.0" }
 criterion = "0.5"
-bevy = { version = "0.16.0", default-features = false }
