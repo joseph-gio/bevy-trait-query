@@ -516,8 +516,8 @@ fn with_one_filter() {
         world.resource::<Output>().0,
         &[
             "People that are either Human or Dolphin but not both:",
-            "0v1",
-            "2v1",
+            "0v0",
+            "2v0",
             "",
         ]
     );
@@ -557,7 +557,7 @@ fn without_any_filter() {
 
     assert_eq!(
         world.resource::<Output>().0,
-        &["People that are neither Human or Dolphin:", "3v1", "",]
+        &["People that are neither Human or Dolphin:", "3v0", "",]
     );
 }
 
@@ -748,7 +748,7 @@ fn transmute_doesnt_panic_if_no_trait_touched() {
 
     schedule.run(&mut world);
 
-    assert_eq!(world.resource::<Output>().0, &["0v1", "2v1", "3v1"]);
+    assert_eq!(world.resource::<Output>().0, &["0v0", "2v0", "3v0"]);
 }
 
 fn query_and_transmute_and_print_panic(
