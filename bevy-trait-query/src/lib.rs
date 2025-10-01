@@ -295,6 +295,7 @@ unsafe fn debug_unreachable() -> ! {
     unreachable!();
 
     #[cfg(not(debug_assertions))]
+    #[allow(unsafe_op_in_unsafe_fn)]
     std::hint::unreachable_unchecked();
 }
 
