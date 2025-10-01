@@ -6,8 +6,8 @@ resolver = "3"
 edition = "2024"
 
 [workspace.dependencies]
-bevy_app = "0.16.0"
-bevy_ecs = "0.16.0"
+bevy_app = "0.17.1"
+bevy_ecs = "0.17.1"
 tracing  = "0.1"
 
 # proc macro
@@ -18,5 +18,5 @@ quote                 = "1"
 syn                   = { features = ["full"], version = "2" }
 
 # dev deps
-bevy      = { default-features = false, version = "0.16.0" }
+bevy      = { default-features = false, version = "0.17.1" }
 criterion = "0.7"
