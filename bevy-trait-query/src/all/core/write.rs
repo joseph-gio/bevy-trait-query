@@ -202,7 +202,7 @@ impl<'w, Trait: ?Sized + TraitQuery> IntoIterator for WriteTraits<'w, Trait> {
         let sparse = WriteSparseTraitsIter {
             components: self.registry.sparse_components.iter(),
             meta: self.registry.sparse_meta.iter(),
-            entity: self.table.entities()[self.table_row.as_usize()],
+            entity: self.table.entities()[self.table_row.index()],
             sparse_sets: self.sparse_sets,
             last_run: self.last_run,
             this_run: self.this_run,
@@ -227,7 +227,7 @@ impl<'local, Trait: ?Sized + TraitQuery> IntoIterator for &'local WriteTraits<'_
         let sparse = ReadSparseTraitsIter {
             components: self.registry.sparse_components.iter(),
             meta: self.registry.sparse_meta.iter(),
-            entity: self.table.entities()[self.table_row.as_usize()],
+            entity: self.table.entities()[self.table_row.index()],
             sparse_sets: self.sparse_sets,
             last_run: self.last_run,
             this_run: self.this_run,
@@ -252,7 +252,7 @@ impl<'local, Trait: ?Sized + TraitQuery> IntoIterator for &'local mut WriteTrait
         let sparse = WriteSparseTraitsIter {
             components: self.registry.sparse_components.iter(),
             meta: self.registry.sparse_meta.iter(),
-            entity: self.table.entities()[self.table_row.as_usize()],
+            entity: self.table.entities()[self.table_row.index()],
             sparse_sets: self.sparse_sets,
             last_run: self.last_run,
             this_run: self.this_run,

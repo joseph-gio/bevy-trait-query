@@ -155,22 +155,24 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
 
             const IS_READ_ONLY: bool = true;
 
-            type Item<'__w> = #my_crate::ReadTraits<'__w, #trait_object>;
+            type Item<'__w, '__s> = #my_crate::ReadTraits<'__w, #trait_object>;
 
             #[inline]
-            fn shrink<'wlong: 'wshort, 'wshort>(
-                item: Self::Item<'wlong>,
-            ) -> Self::Item<'wshort> {
+            fn shrink<'wlong: 'wshort, 'wshort, 's>(
+                item: Self::Item<'wlong, 's>,
+            ) -> Self::Item<'wshort, 's> {
                 item
             }
 
             #[inline]
-            unsafe fn fetch<'w>(
+            unsafe fn fetch<'w, 's>(
+                state: &'s Self::State,
                 fetch: &mut Self::Fetch<'w>,
                 entity: #imports::Entity,
                 table_row: #imports::TableRow,
-            ) -> Self::Item<'w> {
+            ) -> Self::Item<'w, 's> {
                 <#my_crate::All<&#trait_object> as #imports::QueryData>::fetch(
+                    state,
                     fetch,
                     entity,
                     table_row,
@@ -228,7 +230,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             #[inline]
             fn update_component_access(
                 state: &Self::State,
-                access: &mut #imports::FilteredAccess<#imports::ComponentId>,
+                access: &mut #imports::FilteredAccess,
             ) {
                 <#my_crate::All<&#trait_object> as #imports::WorldQuery>::update_component_access(
                     state, access,
@@ -265,24 +267,26 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
         {
             type ReadOnly = &'__a #trait_object;
 
-            type Item<'__w> = #my_crate::WriteTraits<'__w, #trait_object>;
+            type Item<'__w, '__s> = #my_crate::WriteTraits<'__w, #trait_object>;
 
             const IS_READ_ONLY: bool = false;
 
             #[inline]
-            fn shrink<'wlong: 'wshort, 'wshort>(
-                item: Self::Item<'wlong>,
-            ) -> Self::Item<'wshort> {
+            fn shrink<'wlong: 'wshort, 'wshort, 's>(
+                item: Self::Item<'wlong, 's>,
+            ) -> Self::Item<'wshort, 's> {
                 item
             }
 
             #[inline]
-            unsafe fn fetch<'w>(
+            unsafe fn fetch<'w, 's>(
+                state: &'s Self::State,
                 fetch: &mut Self::Fetch<'w>,
                 entity: #imports::Entity,
                 table_row: #imports::TableRow,
-            ) -> Self::Item<'w> {
+            ) -> Self::Item<'w, 's> {
                 <#my_crate::All<&mut #trait_object> as #imports::QueryData>::fetch(
+                    state,
                     fetch,
                     entity,
                     table_row,
@@ -337,7 +341,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             #[inline]
             fn update_component_access(
                 state: &Self::State,
-                access: &mut #imports::FilteredAccess<#imports::ComponentId>,
+                access: &mut #imports::FilteredAccess,
             ) {
                 <#my_crate::All<&mut #trait_object> as #imports::WorldQuery>::update_component_access(
                     state, access,

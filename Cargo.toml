@@ -1,25 +1,26 @@
 [workspace]
+members  = ["bevy-trait-query", "bevy-trait-query-impl"]
 resolver = "3"
-members = [
-  "bevy-trait-query",
-  "bevy-trait-query-impl"
-]
 
 [workspace.package]
-edition = "2024"
+categories = ["game-development"]
+edition    = "2024"
+keywords   = ["bevy", "gamedev", "plugin", "query", "trait"]
+license    = "MIT OR Apache-2.0"
+repository = "https://github.com/JoJoJet/bevy-trait-query/"
 
 [workspace.dependencies]
-tracing = "0.1"
-bevy_ecs = "0.16.0"
-bevy_app = "0.16.0"
+bevy_app = { version = "0.17.1" }
+bevy_ecs = { version = "0.17.1" }
+tracing  = { version = "0.1.41" }
 
 # proc macro
-bevy-trait-query-impl = { version = "0.16.0", path = "./bevy-trait-query-impl" }
-proc-macro2 = "1"
-syn = { version = "2", features = ["full"] }
-quote = "1"
-proc-macro-crate = "3"
+bevy-trait-query-impl = { path = "./bevy-trait-query-impl", version = "0.16.0" }
+proc-macro-crate      = { version = "3.4.0" }
+proc-macro2           = { version = "1.0.101" }
+quote                 = { version = "1.0.41" }
+syn                   = { features = ["full"], version = "2.0.106" }
 
 # dev deps
-criterion = "0.5"
-bevy = { version = "0.16.0", default-features = false }
+bevy      = { default-features = false, version = "0.17.1" }
+criterion = { version = "0.7.0" }

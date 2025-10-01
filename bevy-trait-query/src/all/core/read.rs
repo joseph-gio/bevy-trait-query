@@ -145,7 +145,7 @@ impl<'w, Trait: ?Sized + TraitQuery> IntoIterator for ReadTraits<'w, Trait> {
         let sparse = ReadSparseTraitsIter {
             components: self.registry.sparse_components.iter(),
             meta: self.registry.sparse_meta.iter(),
-            entity: self.table.entities()[self.table_row.as_usize()],
+            entity: self.table.entities()[self.table_row.index()],
             sparse_sets: self.sparse_sets,
             last_run: self.last_run,
             this_run: self.this_run,
@@ -170,7 +170,7 @@ impl<'w, Trait: ?Sized + TraitQuery> IntoIterator for &ReadTraits<'w, Trait> {
         let sparse = ReadSparseTraitsIter {
             components: self.registry.sparse_components.iter(),
             meta: self.registry.sparse_meta.iter(),
-            entity: self.table.entities()[self.table_row.as_usize()],
+            entity: self.table.entities()[self.table_row.index()],
             sparse_sets: self.sparse_sets,
             last_run: self.last_run,
             this_run: self.this_run,

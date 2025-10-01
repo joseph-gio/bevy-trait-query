@@ -28,21 +28,24 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
 
     const IS_READ_ONLY: bool = true;
 
-    type Item<'w> = Ref<'w, Trait>;
+    type Item<'w, 's> = Ref<'w, Trait>;
 
     #[inline]
-    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
+    fn shrink<'wlong: 'wshort, 'wshort, 's>(
+        item: QueryItem<'wlong, 's, Self>,
+    ) -> QueryItem<'wshort, 's, Self> {
         item
     }
 
     #[inline]
-    unsafe fn fetch<'w>(
+    unsafe fn fetch<'w, 's>(
+        _state: &'s Self::State,
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w> {
+    ) -> Self::Item<'w, 's> {
         unsafe {
-            let table_row = table_row.as_usize();
+            let table_row = table_row.index();
             let (dyn_ctor, ptr, added, changed, location) = match fetch.storage {
                 // SAFETY: This function must have been called after `set_archetype`,
                 // so we know that `self.storage` has been initialized.
@@ -134,7 +137,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
             //
             // without loss of generality we use the zero-th row since we only care about whether the
             // component exists in the table
-            let row = TableRow::from_usize(0);
+            let row = TableRow::new(0_u16.into());
             for (&component_id, &meta) in zip_exact(&*state.components, &*state.meta) {
                 if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
                     fetch.storage = table_storage;
@@ -166,7 +169,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
             //
             // without loss of generality we use the zero-th row since we only care about whether the
             // component exists in the table
-            let row = TableRow::from_usize(0);
+            let row = TableRow::new(0_u16.into());
             for (&component_id, &meta) in std::iter::zip(&*state.components, &*state.meta) {
                 if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
                     fetch.storage = table_storage;
@@ -179,10 +182,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
     }
 
     #[inline]
-    fn update_component_access(
-        state: &Self::State,
-        access: &mut bevy_ecs::query::FilteredAccess<ComponentId>,
-    ) {
+    fn update_component_access(state: &Self::State, access: &mut bevy_ecs::query::FilteredAccess) {
         let mut new_access = access.clone();
         let mut not_first = false;
         for &component in &*state.components {
@@ -237,21 +237,24 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
 
     const IS_READ_ONLY: bool = false;
 
-    type Item<'w> = Mut<'w, Trait>;
+    type Item<'w, 's> = Mut<'w, Trait>;
 
     #[inline]
-    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
+    fn shrink<'wlong: 'wshort, 'wshort, 's>(
+        item: QueryItem<'wlong, 's, Self>,
+    ) -> QueryItem<'wshort, 's, Self> {
         item
     }
 
     #[inline]
     unsafe fn fetch<'w>(
+        _state: &Self::State,
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
     ) -> Mut<'w, Trait> {
         unsafe {
-            let table_row = table_row.as_usize();
+            let table_row = table_row.index();
             let (dyn_ctor, ptr, added, changed, location) = match fetch.storage {
                 // SAFETY: This function must have been called after `set_archetype`,
                 // so we know that `self.storage` has been initialized.
@@ -345,7 +348,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
             //
             // without loss of generality we use the zero-th row since we only care about whether the
             // component exists in the table
-            let row = TableRow::from_usize(0);
+            let row = TableRow::new(0_u16.into());
             for (&component_id, &meta) in zip_exact(&*state.components, &*state.meta) {
                 if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
                     fetch.storage = table_storage;
@@ -377,7 +380,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
             //
             // without loss of generality we use the zero-th row since we only care about whether the
             // component exists in the table
-            let row = TableRow::from_usize(0);
+            let row = TableRow::new(0_u16.into());
             for (&component_id, &meta) in std::iter::zip(&*state.components, &*state.meta) {
                 if let Some(table_storage) = get_table_fetch_data(table, component_id, row, meta) {
                     fetch.storage = table_storage;
@@ -390,10 +393,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
     }
 
     #[inline]
-    fn update_component_access(
-        state: &Self::State,
-        access: &mut bevy_ecs::query::FilteredAccess<ComponentId>,
-    ) {
+    fn update_component_access(state: &Self::State, access: &mut bevy_ecs::query::FilteredAccess) {
         let mut new_access = access.clone();
         let mut not_first = false;
         for &component in &*state.components {
@@ -446,11 +446,11 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
 // gets all the relevant data repeatingly used for the table storage
 #[inline]
 unsafe fn get_table_fetch_data<Trait: ?Sized + TraitQuery>(
-    table: &bevy_ecs::storage::Table,
+    table: &'_ bevy_ecs::storage::Table,
     component_id: ComponentId,
     row: TableRow,
     meta: TraitImplMeta<Trait>,
-) -> Option<FetchStorage<Trait>> {
+) -> Option<FetchStorage<'_, Trait>> {
     unsafe {
         let ptr = table.get_component(component_id, row)?;
         let location = table.get_changed_by(component_id, row).transpose()?;

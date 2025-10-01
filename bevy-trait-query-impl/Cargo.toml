@@ -1,19 +1,18 @@
 [package]
-name = "bevy-trait-query-impl"
-version = "0.16.0"
-edition.workspace = true
-
+categories  = { workspace = true }
 description = "Procedural macro for `bevy-trait-query`"
-repository = "https://github.com/JoJoJet/bevy-trait-query/"
-license = "MIT OR Apache-2.0"
-keywords = ["bevy", "gamedev", "plugin", "query", "trait"]
-categories = ["game-development"]
+edition     = { workspace = true }
+keywords    = { workspace = true }
+license     = { workspace = true }
+name        = "bevy-trait-query-impl"
+repository  = { workspace = true }
+version     = "0.16.0"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-proc-macro2.workspace = true
-syn = { workspace = true, features = ["full"] }
-quote.workspace = true
-proc-macro-crate.workspace = true
+proc-macro-crate = { workspace = true }
+proc-macro2      = { workspace = true }
+quote            = { workspace = true }
+syn              = { features = ["full"], workspace = true }

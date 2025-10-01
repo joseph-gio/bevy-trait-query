@@ -1,43 +1,42 @@
 [package]
-name = "bevy-trait-query"
-version = "0.16.0"
-edition.workspace = true
-
+categories  = { workspace = true }
 description = "Implementation of trait queries for the bevy game engine"
-repository = "https://github.com/JoJoJet/bevy-trait-query/"
-license = "MIT OR Apache-2.0"
-keywords = ["bevy", "gamedev", "plugin", "query", "trait"]
-categories = ["game-development"]
+edition     = { workspace = true }
+keywords    = { workspace = true }
+license     = { workspace = true }
+name        = "bevy-trait-query"
+repository  = { workspace = true }
+version     = "0.16.0"
 
 [features]
 default = ["bevy_app"]
 
 [dependencies]
-bevy-trait-query-impl.workspace = true
-tracing.workspace = true
-bevy_ecs.workspace = true
-bevy_app = { workspace = true, optional = true}
+bevy-trait-query-impl = { workspace = true }
+bevy_app              = { optional = true, workspace = true }
+bevy_ecs              = { workspace = true }
+tracing               = { workspace = true }
 
 [dev-dependencies]
-criterion.workspace = true
-bevy = { workspace = true, default-features = false }
+bevy      = { default-features = false, workspace = true }
+criterion = { workspace = true }
 
 [[bench]]
-name = "concrete"
-path = "../benches/concrete.rs"
 harness = false
+name    = "concrete"
+path    = "../benches/concrete.rs"
 
 [[bench]]
-name = "all"
-path = "../benches/all.rs"
 harness = false
+name    = "all"
+path    = "../benches/all.rs"
 
 [[bench]]
-name = "one"
-path = "../benches/one.rs"
 harness = false
+name    = "one"
+path    = "../benches/one.rs"
 
 [[bench]]
-name = "fragmented"
-path = "../benches/fragmented.rs"
 harness = false
+name    = "fragmented"
+path    = "../benches/fragmented.rs"
