@@ -446,11 +446,11 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
 // gets all the relevant data repeatingly used for the table storage
 #[inline]
 unsafe fn get_table_fetch_data<Trait: ?Sized + TraitQuery>(
-    table: &bevy_ecs::storage::Table,
+    table: &'_ bevy_ecs::storage::Table,
     component_id: ComponentId,
     row: TableRow,
     meta: TraitImplMeta<Trait>,
-) -> Option<FetchStorage<Trait>> {
+) -> Option<FetchStorage<'_, Trait>> {
     unsafe {
         let ptr = table.get_component(component_id, row)?;
         let location = table.get_changed_by(component_id, row).transpose()?;
