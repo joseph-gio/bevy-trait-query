@@ -6,7 +6,7 @@ keywords    = { workspace = true }
 license     = { workspace = true }
 name        = "bevy-trait-query"
 repository  = { workspace = true }
-version     = "0.16.0"
+version     = "0.17.0"
 
 [features]
 default = ["bevy_app"]
