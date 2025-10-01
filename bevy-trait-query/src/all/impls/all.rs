@@ -31,19 +31,22 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for All<&Trait> {
 
     const IS_READ_ONLY: bool = true;
 
-    type Item<'w> = ReadTraits<'w, Trait>;
+    type Item<'w, 's> = ReadTraits<'w, Trait>;
 
     #[inline]
-    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
+    fn shrink<'wlong: 'wshort, 'wshort, 's>(
+        item: QueryItem<'wlong, 's, Self>,
+    ) -> QueryItem<'wshort, 's, Self> {
         item
     }
 
     #[inline]
-    unsafe fn fetch<'w>(
+    unsafe fn fetch<'w, 's>(
+        _state: &'s Self::State,
         fetch: &mut Self::Fetch<'w>,
         _entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w> {
+    ) -> Self::Item<'w, 's> {
         let table = fetch
             .table
             .unwrap_or_else(|| unsafe { debug_unreachable() });
@@ -108,10 +111,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
     }
 
     #[inline]
-    fn update_component_access(
-        state: &Self::State,
-        access: &mut bevy_ecs::query::FilteredAccess<ComponentId>,
-    ) {
+    fn update_component_access(state: &Self::State, access: &mut bevy_ecs::query::FilteredAccess) {
         let mut not_first = false;
         let mut new_access = access.clone();
         for &component in &*state.components {
@@ -166,19 +166,22 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for All<&'a mut Trait> {
 
     const IS_READ_ONLY: bool = false;
 
-    type Item<'w> = WriteTraits<'w, Trait>;
+    type Item<'w, 's> = WriteTraits<'w, Trait>;
 
     #[inline]
-    fn shrink<'wlong: 'wshort, 'wshort>(item: QueryItem<'wlong, Self>) -> QueryItem<'wshort, Self> {
+    fn shrink<'wlong: 'wshort, 'wshort, 's>(
+        item: QueryItem<'wlong, 's, Self>,
+    ) -> QueryItem<'wshort, 's, Self> {
         item
     }
 
     #[inline]
-    unsafe fn fetch<'w>(
+    unsafe fn fetch<'w, 's>(
+        _state: &'s Self::State,
         fetch: &mut Self::Fetch<'w>,
         _entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w> {
+    ) -> Self::Item<'w, 's> {
         let table = fetch
             .table
             .unwrap_or_else(|| unsafe { debug_unreachable() });
@@ -243,10 +246,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&mut Trait> {
     }
 
     #[inline]
-    fn update_component_access(
-        state: &Self::State,
-        access: &mut bevy_ecs::query::FilteredAccess<ComponentId>,
-    ) {
+    fn update_component_access(state: &Self::State, access: &mut bevy_ecs::query::FilteredAccess) {
         let mut not_first = false;
         let mut new_access = access.clone();
         for &component in &*state.components {

@@ -25,25 +25,28 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneAdded<Trait> {
 
     const IS_READ_ONLY: bool = true;
 
-    type Item<'w> = bool;
+    type Item<'w, 's> = bool;
 
-    fn shrink<'wlong: 'wshort, 'wshort>(item: Self::Item<'wlong>) -> Self::Item<'wshort> {
+    fn shrink<'wlong: 'wshort, 'wshort, 's>(
+        item: Self::Item<'wlong, 's>,
+    ) -> Self::Item<'wshort, 's> {
         item
     }
 
     #[inline(always)]
-    unsafe fn fetch<'w>(
+    unsafe fn fetch<'w, 's>(
+        _state: &'s Self::State,
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w> {
+    ) -> Self::Item<'w, 's> {
         unsafe {
             let ticks_ptr = match fetch.storage {
                 ChangeDetectionStorage::Uninit => {
                     // set_archetype must have been called already
                     debug_unreachable()
                 }
-                ChangeDetectionStorage::Table { ticks } => ticks.get(table_row.as_usize()),
+                ChangeDetectionStorage::Table { ticks } => ticks.get(table_row.index()),
                 ChangeDetectionStorage::SparseSet { components } => components
                     .get_added_tick(entity)
                     .unwrap_or_else(|| debug_unreachable()),
@@ -118,7 +121,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneAdded<Trait> {
     }
 
     #[inline]
-    fn update_component_access(state: &Self::State, access: &mut FilteredAccess<ComponentId>) {
+    fn update_component_access(state: &Self::State, access: &mut FilteredAccess) {
         let mut new_access = access.clone();
         let mut not_first = false;
         for &component in &*state.components {
@@ -172,10 +175,11 @@ unsafe impl<Trait: ?Sized + TraitQuery> ReadOnlyQueryData for OneAdded<Trait> {}
 unsafe impl<Trait: ?Sized + TraitQuery> QueryFilter for OneAdded<Trait> {
     const IS_ARCHETYPAL: bool = false;
     unsafe fn filter_fetch(
+        state: &Self::State,
         fetch: &mut Self::Fetch<'_>,
         entity: Entity,
         table_row: TableRow,
     ) -> bool {
-        unsafe { <Self as QueryData>::fetch(fetch, entity, table_row) }
+        unsafe { <Self as QueryData>::fetch(state, fetch, entity, table_row) }
     }
 }

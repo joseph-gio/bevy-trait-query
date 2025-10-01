@@ -43,10 +43,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
     unsafe fn set_table(_fetch: &mut (), _state: &Self::State, _table: &bevy_ecs::storage::Table) {}
 
     #[inline]
-    fn update_component_access(
-        state: &Self::State,
-        access: &mut bevy_ecs::query::FilteredAccess<ComponentId>,
-    ) {
+    fn update_component_access(state: &Self::State, access: &mut bevy_ecs::query::FilteredAccess) {
         let mut new_access = access.clone();
         for &component in state.components.iter() {
             let mut intermediate = access.clone();
@@ -88,6 +85,7 @@ impl<Trait: ?Sized + TraitQuery> ArchetypeFilter for WithOne<Trait> {}
 unsafe impl<Trait: ?Sized + TraitQuery> QueryFilter for WithOne<Trait> {
     const IS_ARCHETYPAL: bool = false;
     unsafe fn filter_fetch(
+        _state: &Self::State,
         _fetch: &mut Self::Fetch<'_>,
         _entity: Entity,
         _table_row: TableRow,
