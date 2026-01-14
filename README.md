@@ -13,6 +13,7 @@ Before using this crate, you should be familiar with bevy: https://bevyengine.or
 | Bevy Version | [Crate Version](CHANGELOG.md) |
 |--------------|---------------|
 | Preview      | Main branch   |
+| 0.18         | 0.18          |
 | 0.17         | 0.17          |
 | 0.16         | 0.16          |
 | 0.15         | 0.7           |
