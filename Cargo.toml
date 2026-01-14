@@ -15,7 +15,7 @@ bevy_ecs = { version = "0.18.0" }
 tracing  = { version = "0.1.41" }
 
 # proc macro
-bevy-trait-query-impl = { path = "./bevy-trait-query-impl", version = "0.17.3" }
+bevy-trait-query-impl = { path = "./bevy-trait-query-impl", version = "0.18.0" }
 proc-macro-crate      = { version = "3.4.0" }
 proc-macro2           = { version = "1.0.103" }
 quote                 = { version = "1.0.42" }

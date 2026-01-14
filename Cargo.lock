@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "bevy-trait-query"
-version = "0.17.3"
+version = "0.18.0"
 dependencies = [
  "bevy",
  "bevy-trait-query-impl",
@@ -149,7 +149,7 @@ dependencies = [
 
 [[package]]
 name = "bevy-trait-query-impl"
-version = "0.17.3"
+version = "0.18.0"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",

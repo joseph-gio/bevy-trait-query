@@ -6,7 +6,7 @@ keywords    = { workspace = true }
 license     = { workspace = true }
 name        = "bevy-trait-query-impl"
 repository  = { workspace = true }
-version     = "0.17.3"
+version     = "0.18.0"
 
 [lib]
 proc-macro = true
