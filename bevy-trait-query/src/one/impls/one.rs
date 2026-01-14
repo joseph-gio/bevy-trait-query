@@ -63,8 +63,8 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
                         ptr,
                         // SAFETY: We have read access to the component, so by extension
                         // we have access to the corresponding `ComponentTicks`.
-                        added_ticks.get(table_row).deref(),
-                        changed_ticks.get(table_row).deref(),
+                        added_ticks.get_unchecked(table_row).deref(),
+                        changed_ticks.get_unchecked(table_row).deref(),
                         location,
                     )
                 }
@@ -275,8 +275,8 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
                         ptr.assert_unique(),
                         // SAFETY: We have exclusive access to the component, so by extension
                         // we have exclusive access to the corresponding `ComponentTicks`.
-                        added_ticks.get(table_row).deref_mut(),
-                        changed_ticks.get(table_row).deref_mut(),
+                        added_ticks.get_unchecked(table_row).deref_mut(),
+                        changed_ticks.get_unchecked(table_row).deref_mut(),
                         location,
                     )
                 }

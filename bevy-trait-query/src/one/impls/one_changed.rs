@@ -48,7 +48,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneChanged<Trait> {
                     // set_archetype must have been called already
                     debug_unreachable()
                 }
-                ChangeDetectionStorage::Table { ticks } => ticks.get(table_row.index()),
+                ChangeDetectionStorage::Table { ticks } => ticks.get_unchecked(table_row.index()),
                 ChangeDetectionStorage::SparseSet { components } => components
                     .get_changed_tick(entity)
                     .unwrap_or_else(|| debug_unreachable()),
