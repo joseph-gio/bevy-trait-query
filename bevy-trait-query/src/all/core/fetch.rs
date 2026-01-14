@@ -1,5 +1,5 @@
 use bevy_ecs::{
-    component::Tick,
+    change_detection::Tick,
     storage::{SparseSets, Table},
 };
 

@@ -1,6 +1,6 @@
 use bevy_ecs::{
-    change_detection::{DetectChanges, Mut, Ref},
-    component::{ComponentId, Tick},
+    change_detection::{DetectChanges, Mut, Ref, Tick},
+    component::ComponentId,
     entity::Entity,
     ptr::UnsafeCellDeref,
     storage::{SparseSets, Table, TableRow},

@@ -1,7 +1,8 @@
 use std::marker::PhantomData;
 
 use bevy_ecs::{
-    component::{ComponentId, Components, Tick},
+    change_detection::Tick,
+    component::{ComponentId, Components},
     prelude::{Entity, World},
     query::{ArchetypeFilter, QueryFilter, WorldQuery},
     storage::TableRow,

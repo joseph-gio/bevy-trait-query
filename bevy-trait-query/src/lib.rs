@@ -276,7 +276,7 @@ pub use bevy_trait_query_impl::queryable;
 pub mod imports {
     pub use bevy_ecs::{
         archetype::Archetype,
-        component::Tick,
+        change_detection::Tick,
         component::{Component, ComponentId, Components},
         entity::Entity,
         query::{

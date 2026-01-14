@@ -2,7 +2,7 @@ use std::{cell::UnsafeCell, panic::Location};
 
 use bevy_ecs::{
     change_detection::MaybeLocation,
-    component::Tick,
+    change_detection::Tick,
     ptr::{Ptr, ThinSlicePtr},
     storage::{ComponentSparseSet, SparseSets},
 };

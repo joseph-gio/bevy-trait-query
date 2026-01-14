@@ -1,7 +1,7 @@
 use std::cell::UnsafeCell;
 
 use bevy_ecs::{
-    component::Tick,
+    change_detection::Tick,
     ptr::ThinSlicePtr,
     storage::{ComponentSparseSet, SparseSets},
 };

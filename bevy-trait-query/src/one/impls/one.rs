@@ -1,9 +1,9 @@
-use bevy_ecs::change_detection::{Mut, Ref};
+use bevy_ecs::change_detection::{Mut, Ref, Tick};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::World;
 use bevy_ecs::ptr::UnsafeCellDeref;
 use bevy_ecs::{
-    component::{ComponentId, Components, Tick},
+    component::{ComponentId, Components},
     query::{QueryData, QueryItem, ReadOnlyQueryData, WorldQuery},
     storage::TableRow,
     world::unsafe_world_cell::UnsafeWorldCell,

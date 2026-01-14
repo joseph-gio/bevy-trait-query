@@ -1,5 +1,6 @@
 use bevy_ecs::{
-    component::{ComponentId, Components, Tick},
+    change_detection::Tick,
+    component::{ComponentId, Components},
     entity::Entity,
     query::{QueryData, QueryItem, ReadOnlyQueryData, WorldQuery},
     storage::TableRow,
