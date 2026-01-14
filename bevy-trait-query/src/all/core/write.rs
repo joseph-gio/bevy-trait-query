@@ -122,8 +122,8 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for WriteSparseTraitsIter<'a, Trai
             unsafe { zip_exact(&mut self.components, &mut self.meta) }.find_map(
                 |(&component, meta)| {
                     let set = self.sparse_sets.get(component)?;
-                    let (ptr, ticks, location) = set.get_with_ticks(self.entity)?;
-                    Some((ptr, ticks, meta, location))
+                    let (ptr, ticks) = set.get_with_ticks(self.entity)?;
+                    Some((ptr, ticks, meta, ticks.changed_by))
                 },
             )?;
 

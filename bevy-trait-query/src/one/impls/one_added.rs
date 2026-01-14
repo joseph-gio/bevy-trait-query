@@ -25,6 +25,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneAdded<Trait> {
     type ReadOnly = Self;
 
     const IS_READ_ONLY: bool = true;
+    const IS_ARCHETYPAL: bool = false;
 
     type Item<'w, 's> = bool;
 
@@ -40,7 +41,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneAdded<Trait> {
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w, 's> {
+    ) -> Option<Self::Item<'w, 's>> {
         unsafe {
             let ticks_ptr = match fetch.storage {
                 ChangeDetectionStorage::Uninit => {
@@ -53,10 +54,18 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneAdded<Trait> {
                     .unwrap_or_else(|| debug_unreachable()),
             };
 
-            (*ticks_ptr)
-                .deref()
-                .is_newer_than(fetch.last_run, fetch.this_run)
+            Some(
+                (*ticks_ptr)
+                    .deref()
+                    .is_newer_than(fetch.last_run, fetch.this_run),
+            )
         }
+    }
+
+    fn iter_access(
+        _state: &Self::State,
+    ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+        std::iter::empty()
     }
 }
 
@@ -182,5 +191,6 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryFilter for OneAdded<Trait> {
         table_row: TableRow,
     ) -> bool {
         unsafe { <Self as QueryData>::fetch(state, fetch, entity, table_row) }
+            .is_some_and(|inner_true| inner_true)
     }
 }

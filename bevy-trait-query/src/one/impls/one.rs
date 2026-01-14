@@ -27,6 +27,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
     type ReadOnly = Self;
 
     const IS_READ_ONLY: bool = true;
+    const IS_ARCHETYPAL: bool = false;
 
     type Item<'w, 's> = Ref<'w, Trait>;
 
@@ -43,7 +44,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Self::Item<'w, 's> {
+    ) -> Option<Self::Item<'w, 's>> {
         unsafe {
             let table_row = table_row.index();
             let (dyn_ctor, ptr, added, changed, location) = match fetch.storage {
@@ -69,7 +70,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
                     )
                 }
                 FetchStorage::SparseSet { components, meta } => {
-                    let (ptr, ticks, location) = components
+                    let (ptr, ticks) = components
                         .get_with_ticks(entity)
                         .unwrap_or_else(|| debug_unreachable());
                     (
@@ -79,20 +80,26 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
                         // we have access to the corresponding `ComponentTicks`.
                         ticks.added.deref(),
                         ticks.changed.deref(),
-                        location,
+                        ticks.changed_by,
                     )
                 }
             };
 
-            Ref::new(
+            Some(Ref::new(
                 dyn_ctor.cast(ptr),
                 added,
                 changed,
                 fetch.last_run,
                 fetch.this_run,
                 location.map(|loc| loc.deref()),
-            )
+            ))
         }
+    }
+
+    fn iter_access(
+        _state: &Self::State,
+    ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+        std::iter::empty()
     }
 }
 
@@ -236,6 +243,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
     type ReadOnly = One<&'a Trait>;
 
     const IS_READ_ONLY: bool = false;
+    const IS_ARCHETYPAL: bool = false;
 
     type Item<'w, 's> = Mut<'w, Trait>;
 
@@ -252,7 +260,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
         fetch: &mut Self::Fetch<'w>,
         entity: Entity,
         table_row: TableRow,
-    ) -> Mut<'w, Trait> {
+    ) -> Option<Mut<'w, Trait>> {
         unsafe {
             let table_row = table_row.index();
             let (dyn_ctor, ptr, added, changed, location) = match fetch.storage {
@@ -281,7 +289,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
                     )
                 }
                 FetchStorage::SparseSet { components, meta } => {
-                    let (ptr, ticks, location) = components
+                    let (ptr, ticks) = components
                         .get_with_ticks(entity)
                         .unwrap_or_else(|| debug_unreachable());
                     (
@@ -294,20 +302,26 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
                         // we have exclusive access to the corresponding `ComponentTicks`.
                         ticks.added.deref_mut(),
                         ticks.changed.deref_mut(),
-                        location,
+                        ticks.changed_by,
                     )
                 }
             };
 
-            Mut::new(
+            Some(Mut::new(
                 dyn_ctor.cast_mut(ptr),
                 added,
                 changed,
                 fetch.last_run,
                 fetch.this_run,
                 location.map(|loc| loc.deref_mut()),
-            )
+            ))
         }
+    }
+
+    fn iter_access(
+        _state: &Self::State,
+    ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+        std::iter::empty()
     }
 }
 

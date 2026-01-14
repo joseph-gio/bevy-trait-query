@@ -154,6 +154,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             type ReadOnly = Self;
 
             const IS_READ_ONLY: bool = true;
+            const IS_ARCHETYPAL: bool = false;
 
             type Item<'__w, '__s> = #my_crate::ReadTraits<'__w, #trait_object>;
 
@@ -170,13 +171,19 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
                 fetch: &mut Self::Fetch<'w>,
                 entity: #imports::Entity,
                 table_row: #imports::TableRow,
-            ) -> Self::Item<'w, 's> {
+            ) -> Option<Self::Item<'w, 's>> {
                 <#my_crate::All<&#trait_object> as #imports::QueryData>::fetch(
                     state,
                     fetch,
                     entity,
                     table_row,
                 )
+            }
+
+            fn iter_access(
+                _state: &Self::State,
+            ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+                std::iter::empty()
             }
         }
         unsafe impl #impl_generics #imports::ReadOnlyQueryData for &#trait_object
@@ -270,6 +277,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             type Item<'__w, '__s> = #my_crate::WriteTraits<'__w, #trait_object>;
 
             const IS_READ_ONLY: bool = false;
+            const IS_ARCHETYPAL: bool = false;
 
             #[inline]
             fn shrink<'wlong: 'wshort, 'wshort, 's>(
@@ -284,13 +292,19 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
                 fetch: &mut Self::Fetch<'w>,
                 entity: #imports::Entity,
                 table_row: #imports::TableRow,
-            ) -> Self::Item<'w, 's> {
+            ) -> Option<Self::Item<'w, 's>> {
                 <#my_crate::All<&mut #trait_object> as #imports::QueryData>::fetch(
                     state,
                     fetch,
                     entity,
                     table_row,
                 )
+            }
+
+            fn iter_access(
+                _state: &Self::State,
+            ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+                std::iter::empty()
             }
         }
 
