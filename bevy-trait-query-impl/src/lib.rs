@@ -245,7 +245,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             }
 
             #[inline]
-            fn init_state(world: &mut #imports::World) -> Self::State {
+            fn init_state(world: &#imports::World) -> Self::State {
                 <#my_crate::All<&#trait_object> as #imports::WorldQuery>::init_state(world)
             }
 
@@ -363,7 +363,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             }
 
             #[inline]
-            fn init_state(world: &mut #imports::World) -> Self::State {
+            fn init_state(world: &#imports::World) -> Self::State {
                 <#my_crate::All<&mut #trait_object> as #imports::WorldQuery>::init_state(world)
             }
 

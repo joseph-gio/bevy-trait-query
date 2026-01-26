@@ -156,7 +156,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneChanged<Trait> {
     }
 
     #[inline]
-    fn init_state(world: &mut World) -> Self::State {
+    fn init_state(world: &World) -> Self::State {
         TraitQueryState::init(world)
     }
 

@@ -13,21 +13,25 @@ pub struct TraitQueryState<Trait: ?Sized> {
 }
 
 impl<Trait: ?Sized + TraitQuery> TraitQueryState<Trait> {
-    pub(crate) fn init(world: &mut World) -> Self {
-        #[cold]
-        fn missing_registry<T: ?Sized + 'static>() -> TraitImplRegistry<T> {
-            tracing::warn!(
-                "no components found matching `{}`, did you forget to register them?",
-                std::any::type_name::<T>()
-            );
-            TraitImplRegistry::<T>::default()
-        }
-
-        let mut registry = world.get_resource_or_insert_with(missing_registry);
-        registry.seal();
-        Self {
-            components: registry.components.clone().into_boxed_slice(),
-            meta: registry.meta.clone().into_boxed_slice(),
+    pub(crate) fn init(world: &World) -> Self {
+        match world.get_resource::<TraitImplRegistry<Trait>>() {
+            Some(registry) => {
+                registry.seal();
+                Self {
+                    components: registry.components.clone().into_boxed_slice(),
+                    meta: registry.meta.clone().into_boxed_slice(),
+                }
+            }
+            None => {
+                tracing::warn!(
+                    "no components found matching `{}`, did you forget to register them?",
+                    std::any::type_name::<Trait>()
+                );
+                Self {
+                    components: Box::new([]),
+                    meta: Box::new([]),
+                }
+            }
         }
     }
 
