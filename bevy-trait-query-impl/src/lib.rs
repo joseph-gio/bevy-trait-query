@@ -182,7 +182,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
 
             fn iter_access(
                 _state: &Self::State,
-            ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+            ) -> impl Iterator<Item = #imports::EcsAccessType<'_>> {
                 std::iter::empty()
             }
         }
@@ -303,7 +303,7 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
 
             fn iter_access(
                 _state: &Self::State,
-            ) -> impl Iterator<Item = bevy_ecs::query::EcsAccessType<'_>> {
+            ) -> impl Iterator<Item = #imports::EcsAccessType<'_>> {
                 std::iter::empty()
             }
         }
