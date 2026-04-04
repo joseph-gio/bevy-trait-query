@@ -1,3 +1,5 @@
+use core::sync::atomic::{AtomicBool, Ordering};
+
 use crate::TraitQuery;
 use crate::dyn_constructor::DynCtor;
 use bevy_ecs::component::{Component, ComponentId, StorageType};
@@ -14,7 +16,7 @@ pub(crate) struct TraitImplRegistry<Trait: ?Sized> {
     pub(crate) sparse_components: Vec<ComponentId>,
     pub(crate) sparse_meta: Vec<TraitImplMeta<Trait>>,
 
-    pub(crate) sealed: bool,
+    pub(crate) sealed: AtomicBool,
 }
 
 impl<T: ?Sized> Default for TraitImplRegistry<T> {
@@ -27,7 +29,7 @@ impl<T: ?Sized> Default for TraitImplRegistry<T> {
             table_meta: vec![],
             sparse_components: vec![],
             sparse_meta: vec![],
-            sealed: false,
+            sealed: AtomicBool::new(false),
         }
     }
 }
@@ -43,7 +45,7 @@ impl<Trait: ?Sized + TraitQuery> TraitImplRegistry<Trait> {
             return;
         }
 
-        if self.sealed {
+        if self.sealed.load(Ordering::Relaxed) {
             // It is not possible to update the `FetchState` for a given system after the game has started,
             // so for explicitness, let's panic instead of having a trait impl silently get forgotten.
             panic!("Cannot register new trait impls after the game has started");
@@ -64,8 +66,8 @@ impl<Trait: ?Sized + TraitQuery> TraitImplRegistry<Trait> {
         }
     }
 
-    pub(crate) fn seal(&mut self) {
-        self.sealed = true;
+    pub(crate) fn seal(&self) {
+        self.sealed.store(true, Ordering::Relaxed);
     }
 }
 

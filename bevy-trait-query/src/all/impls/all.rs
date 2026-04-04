@@ -143,7 +143,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
     }
 
     #[inline]
-    fn init_state(world: &mut World) -> Self::State {
+    fn init_state(world: &World) -> Self::State {
         TraitQueryState::init(world)
     }
 
@@ -285,7 +285,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&mut Trait> {
     }
 
     #[inline]
-    fn init_state(world: &mut World) -> Self::State {
+    fn init_state(world: &World) -> Self::State {
         TraitQueryState::init(world)
     }
 
