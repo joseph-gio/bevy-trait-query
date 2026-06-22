@@ -15,7 +15,7 @@ bevy_ecs = { default-features = false, version = "0.19.0" }
 tracing  = { default-features = false, version = "0.1.41" }
 
 # proc macro
-bevy-trait-query-impl = { path = "./bevy-trait-query-impl", version = "0.18.0" }
+bevy-trait-query-impl = { path = "./bevy-trait-query-impl", version = "0.19.0" }
 proc-macro-crate      = { version = "3.4.0" }
 proc-macro2           = { version = "1.0.103" }
 quote                 = { version = "1.0.42" }
