@@ -59,10 +59,10 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
     }
 
     fn init_nested_access(
-        state: &Self::State,
-        system_name: Option<&str>,
-        component_access_set: &mut FilteredAccessSet,
-        world: UnsafeWorldCell,
+        _state: &Self::State,
+        _system_name: Option<&str>,
+        _component_access_set: &mut FilteredAccessSet,
+        _world: UnsafeWorldCell,
     ) {
     }
 
@@ -87,7 +87,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
         state.matches_component_set_one(set_contains_id)
     }
 
-    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {}
+    fn update_archetypes(_state: &mut Self::State, _world: UnsafeWorldCell) {}
 }
 
 impl<Trait: ?Sized + TraitQuery> ArchetypeFilter for WithOne<Trait> {}
