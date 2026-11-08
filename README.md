@@ -11,19 +11,20 @@ An implementation of trait queries for the bevy game engine.
 Before using this crate, you should be familiar with bevy: https://bevyengine.org/.
 
 | Bevy Version | [Crate Version](CHANGELOG.md) |
-|--------------|---------------|
-| Preview      | Main branch   |
-| 0.18         | 0.18          |
-| 0.17         | 0.17          |
-| 0.16         | 0.16          |
-| 0.15         | 0.7           |
-| 0.14         | 0.6           |
-| 0.13         | 0.5           |
-| 0.12         | 0.4           |
-| 0.11         | 0.3           |
-| 0.10         | 0.2           |
-| 0.9          | 0.1           |
-| 0.8          | 0.0.3         |
+|--------------|-------------------------------|
+| 0.20         | Main branch                   |
+| 0.19         | 0.19                          |
+| 0.18         | 0.18                          |
+| 0.17         | 0.17                          |
+| 0.16         | 0.16                          |
+| 0.15         | 0.7                           |
+| 0.14         | 0.6                           |
+| 0.13         | 0.5                           |
+| 0.12         | 0.4                           |
+| 0.11         | 0.3                           |
+| 0.10         | 0.2                           |
+| 0.9          | 0.1                           |
+| 0.8          | 0.0.3                         |
 
 Since version 0.16, we're following bevy's versions. Make sure the crate versions match!
 

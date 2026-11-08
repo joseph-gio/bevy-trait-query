@@ -1,13 +1,13 @@
 use core::{cell::UnsafeCell, panic::Location};
 
+use crate::TraitImplMeta;
+use bevy_ecs::change_detection::AtomicTick;
 use bevy_ecs::{
     change_detection::MaybeLocation,
     change_detection::Tick,
     ptr::{Ptr, ThinSlicePtr},
     storage::{ComponentSparseSet, SparseSets},
 };
-
-use crate::TraitImplMeta;
 
 pub struct OneTraitFetch<'w, Trait: ?Sized> {
     // While we have shared access to all sparse set components,
@@ -39,6 +39,7 @@ pub(crate) enum FetchStorage<'w, Trait: ?Sized> {
         column: Ptr<'w>,
         added_ticks: ThinSlicePtr<'w, UnsafeCell<Tick>>,
         changed_ticks: ThinSlicePtr<'w, UnsafeCell<Tick>>,
+        summary_tick: Option<&'w AtomicTick>,
         location: MaybeLocation<&'w UnsafeCell<&'static Location<'static>>>,
         meta: TraitImplMeta<Trait>,
     },

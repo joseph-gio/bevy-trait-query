@@ -137,7 +137,10 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
         #where_clause
         {
             type Covered = __Component;
-            fn cast(ptr: *mut u8) -> *mut #trait_object {
+            fn cast(ptr: *const u8) -> *const #trait_object {
+                ptr as *const __Component as *const _
+            }
+            fn cast_mut(ptr: *mut u8) -> *mut #trait_object {
                 ptr as *mut __Component as *mut _
             }
         }
@@ -247,6 +250,15 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             }
 
             #[inline]
+            fn init_nested_access(
+                state: &Self::State,
+                system_name: Option<&str>,
+                component_access_set: &mut #imports::FilteredAccessSet,
+                world: #imports::UnsafeWorldCell,
+            ) {
+            }
+
+            #[inline]
             fn init_state(world: &mut #imports::World) -> Self::State {
                 <#my_crate::All<&#trait_object> as #imports::WorldQuery>::init_state(world)
             }
@@ -269,6 +281,9 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
                 fetch
             }
+
+            #[inline]
+            fn update_archetypes(state: &mut Self::State, world: #imports::UnsafeWorldCell) {}
         }
 
         unsafe impl #impl_generics_with_lifetime #imports::SingleEntityQueryData for &'__a mut #trait_object {}
@@ -367,6 +382,15 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             }
 
             #[inline]
+            fn init_nested_access(
+                state: &Self::State,
+                system_name: Option<&str>,
+                component_access_set: &mut #imports::FilteredAccessSet,
+                world: #imports::UnsafeWorldCell,
+            ) {
+            }
+
+            #[inline]
             fn init_state(world: &mut #imports::World) -> Self::State {
                 <#my_crate::All<&mut #trait_object> as #imports::WorldQuery>::init_state(world)
             }
@@ -389,6 +413,9 @@ fn impl_trait_query(arg: TokenStream, item: TokenStream) -> Result<TokenStream2>
             fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
                 fetch
             }
+            
+            #[inline]
+            fn update_archetypes(state: &mut Self::State, world: #imports::UnsafeWorldCell) {}
         }
     };
 
