@@ -8,5 +8,6 @@ pub trait TraitQueryMarker<Trait: ?Sized + TraitQuery> {
     type Covered: Component;
     /// Casts an untyped pointer to a trait object pointer,
     /// with a vtable corresponding to `Self::Covered`.
-    fn cast(_: *mut u8) -> *mut Trait;
+    fn cast(_: *const u8) -> *const Trait;
+    fn cast_mut(_: *mut u8) -> *mut Trait;
 }

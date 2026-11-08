@@ -2,7 +2,7 @@ use bevy_ecs::change_detection::{Mut, Ref, Tick};
 use bevy_ecs::entity::Entity;
 use bevy_ecs::prelude::World;
 use bevy_ecs::ptr::UnsafeCellDeref;
-use bevy_ecs::query::{IterQueryData, SingleEntityQueryData};
+use bevy_ecs::query::{FilteredAccessSet, IterQueryData, SingleEntityQueryData};
 use bevy_ecs::{
     component::{ComponentId, Components},
     query::{QueryData, QueryItem, ReadOnlyQueryData, WorldQuery},
@@ -58,6 +58,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for One<&Trait> {
                     column,
                     added_ticks,
                     changed_ticks,
+                    summary_tick: _,
                     location,
                     meta,
                 } => {
@@ -115,6 +116,11 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
     type State = TraitQueryState<Trait>;
 
     #[inline]
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
+        fetch
+    }
+
+    #[inline]
     unsafe fn init_fetch<'w>(
         world: UnsafeWorldCell<'w>,
         _state: &Self::State,
@@ -130,9 +136,9 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
             }
         }
     }
+    // const IS_ARCHETYPAL: bool = false;
 
     const IS_DENSE: bool = false;
-    // const IS_ARCHETYPAL: bool = false;
 
     #[inline]
     unsafe fn set_archetype<'w>(
@@ -215,6 +221,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
         *access = new_access;
     }
 
+    fn init_nested_access(
+        state: &Self::State,
+        system_name: Option<&str>,
+        component_access_set: &mut FilteredAccessSet,
+        world: UnsafeWorldCell,
+    ) {
+    }
+
     #[inline]
     fn init_state(world: &mut World) -> Self::State {
         TraitQueryState::init(world)
@@ -236,10 +250,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&Trait> {
         state.matches_component_set_one(set_contains_id)
     }
 
-    #[inline]
-    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
-        fetch
-    }
+    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {}
 }
 
 unsafe impl<Trait: ?Sized + TraitQuery> IterQueryData for One<&mut Trait> {}
@@ -268,7 +279,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
     ) -> Option<Mut<'w, Trait>> {
         unsafe {
             let table_row = table_row.index();
-            let (dyn_ctor, ptr, added, changed, location) = match fetch.storage {
+            let (dyn_ctor, ptr, added, changed, summary_tick, location) = match fetch.storage {
                 // SAFETY: This function must have been called after `set_archetype`,
                 // so we know that `self.storage` has been initialized.
                 FetchStorage::Uninit => debug_unreachable(),
@@ -276,6 +287,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
                     column,
                     added_ticks,
                     changed_ticks,
+                    summary_tick,
                     location,
                     meta,
                 } => {
@@ -290,6 +302,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
                         // we have exclusive access to the corresponding `ComponentTicks`.
                         added_ticks.get_unchecked(table_row).deref_mut(),
                         changed_ticks.get_unchecked(table_row).deref_mut(),
+                        summary_tick,
                         location,
                     )
                 }
@@ -307,6 +320,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
                         // we have exclusive access to the corresponding `ComponentTicks`.
                         ticks.added.deref_mut(),
                         ticks.changed.deref_mut(),
+                        ticks.summary_tick,
                         ticks.changed_by,
                     )
                 }
@@ -316,6 +330,7 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
                 dyn_ctor.cast_mut(ptr),
                 added,
                 changed,
+                summary_tick,
                 fetch.last_run,
                 fetch.this_run,
                 location.map(|loc| loc.deref_mut()),
@@ -335,6 +350,11 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for One<&'a mut Trait> {
 unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
     type Fetch<'w> = OneTraitFetch<'w, Trait>;
     type State = TraitQueryState<Trait>;
+
+    #[inline]
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
+        fetch
+    }
 
     #[inline]
     unsafe fn init_fetch<'w>(
@@ -435,6 +455,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
         *access = new_access;
     }
 
+    fn init_nested_access(
+        state: &Self::State,
+        system_name: Option<&str>,
+        component_access_set: &mut FilteredAccessSet,
+        world: UnsafeWorldCell,
+    ) {
+    }
+
     #[inline]
     fn init_state(world: &mut World) -> Self::State {
         TraitQueryState::init(world)
@@ -456,10 +484,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for One<&mut Trait> {
         state.matches_component_set_one(set_contains_id)
     }
 
-    #[inline]
-    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
-        fetch
-    }
+    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {}
 }
 
 // gets all the relevant data repeatingly used for the table storage
@@ -475,10 +500,12 @@ unsafe fn get_table_fetch_data<Trait: ?Sized + TraitQuery>(
         let location = table.get_changed_by(component_id, row).transpose()?;
         let added = table.get_added_ticks_slice_for(component_id)?;
         let changed = table.get_changed_ticks_slice_for(component_id)?;
+        let summary_tick = table.get_summary_tick(component_id);
         Some(FetchStorage::Table {
             column: ptr,
             added_ticks: added.into(),
             changed_ticks: changed.into(),
+            summary_tick,
             location,
             meta,
         })

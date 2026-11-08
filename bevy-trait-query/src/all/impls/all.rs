@@ -1,3 +1,8 @@
+use crate::{
+    AllTraitsFetch, ReadTraits, TraitQuery, TraitQueryState, WriteTraits, debug_unreachable,
+    trait_registry_error,
+};
+use bevy_ecs::query::FilteredAccessSet;
 use bevy_ecs::{
     change_detection::Tick,
     component::{ComponentId, Components},
@@ -7,11 +12,6 @@ use bevy_ecs::{
     },
     storage::TableRow,
     world::{World, unsafe_world_cell::UnsafeWorldCell},
-};
-
-use crate::{
-    AllTraitsFetch, ReadTraits, TraitQuery, TraitQueryState, WriteTraits, debug_unreachable,
-    trait_registry_error,
 };
 
 /// [`WorldQuery`] adapter that fetches all implementations of a given trait for an entity.
@@ -83,6 +83,11 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
     type State = TraitQueryState<Trait>;
 
     #[inline]
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
+        fetch
+    }
+
+    #[inline]
     unsafe fn init_fetch<'w>(
         world: UnsafeWorldCell<'w>,
         _state: &Self::State,
@@ -146,6 +151,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
         *access = new_access;
     }
 
+    fn init_nested_access(
+        state: &Self::State,
+        system_name: Option<&str>,
+        component_access_set: &mut FilteredAccessSet,
+        world: UnsafeWorldCell,
+    ) {
+    }
+
     #[inline]
     fn init_state(world: &mut World) -> Self::State {
         TraitQueryState::init(world)
@@ -167,10 +180,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&Trait> {
         state.matches_component_set_any(set_contains_id)
     }
 
-    #[inline]
-    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
-        fetch
-    }
+    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {}
 }
 
 unsafe impl<Trait: ?Sized + TraitQuery> IterQueryData for All<&mut Trait> {}
@@ -224,6 +234,11 @@ unsafe impl<'a, Trait: ?Sized + TraitQuery> QueryData for All<&'a mut Trait> {
 unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&mut Trait> {
     type Fetch<'w> = AllTraitsFetch<'w, Trait>;
     type State = TraitQueryState<Trait>;
+
+    #[inline]
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
+        fetch
+    }
 
     #[inline]
     unsafe fn init_fetch<'w>(
@@ -290,6 +305,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&mut Trait> {
         *access = new_access;
     }
 
+    fn init_nested_access(
+        state: &Self::State,
+        system_name: Option<&str>,
+        component_access_set: &mut FilteredAccessSet,
+        world: UnsafeWorldCell,
+    ) {
+    }
+
     #[inline]
     fn init_state(world: &mut World) -> Self::State {
         TraitQueryState::init(world)
@@ -311,8 +334,5 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for All<&mut Trait> {
         state.matches_component_set_any(set_contains_id)
     }
 
-    #[inline]
-    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
-        fetch
-    }
+    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {}
 }

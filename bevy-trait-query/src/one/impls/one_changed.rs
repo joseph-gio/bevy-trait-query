@@ -4,6 +4,8 @@ use bevy_ecs::{
 };
 use core::marker::PhantomData;
 
+use crate::{TraitQuery, TraitQueryState, debug_unreachable};
+use bevy_ecs::query::FilteredAccessSet;
 use bevy_ecs::{
     archetype::Archetype,
     change_detection::Tick,
@@ -13,8 +15,6 @@ use bevy_ecs::{
     storage::{Table, TableRow},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
-
-use crate::{TraitQuery, TraitQueryState, debug_unreachable};
 
 use crate::{ChangeDetectionFetch, ChangeDetectionStorage};
 
@@ -78,6 +78,11 @@ unsafe impl<Trait: ?Sized + TraitQuery> QueryData for OneChanged<Trait> {
 unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneChanged<Trait> {
     type Fetch<'w> = ChangeDetectionFetch<'w>;
     type State = TraitQueryState<Trait>;
+
+    #[inline]
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
+        fetch
+    }
 
     unsafe fn init_fetch<'w>(
         world: UnsafeWorldCell<'w>,
@@ -160,6 +165,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneChanged<Trait> {
         *access = new_access;
     }
 
+    fn init_nested_access(
+        state: &Self::State,
+        system_name: Option<&str>,
+        component_access_set: &mut FilteredAccessSet,
+        world: UnsafeWorldCell,
+    ) {
+    }
+
     #[inline]
     fn init_state(world: &mut World) -> Self::State {
         TraitQueryState::init(world)
@@ -180,10 +193,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for OneChanged<Trait> {
         state.matches_component_set_one(set_contains_id)
     }
 
-    #[inline]
-    fn shrink_fetch<'wlong: 'wshort, 'wshort>(fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
-        fetch
-    }
+    fn update_archetypes(state: &mut Self::State, world: UnsafeWorldCell) {}
 }
 
 unsafe impl<Trait: ?Sized + TraitQuery> ReadOnlyQueryData for OneChanged<Trait> {}
