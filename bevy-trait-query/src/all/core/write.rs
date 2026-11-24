@@ -83,6 +83,7 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for WriteTableTraitsIter<'a, Trait
                 .get_changed_tick(component_id, self.table_row)?
                 .deref_mut()
         };
+        let summary_tick = self.table.get_summary_tick(component_id);
         let location = unsafe {
             self.table
                 .get_changed_by(component_id, self.table_row)
@@ -93,6 +94,7 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for WriteTableTraitsIter<'a, Trait
             trait_object,
             added,
             changed,
+            summary_tick,
             self.last_run,
             self.this_run,
             location,
@@ -138,11 +140,13 @@ impl<'a, Trait: ?Sized + TraitQuery> Iterator for WriteSparseTraitsIter<'a, Trai
         // we have exclusive access to the corresponding `ComponentTicks`.
         let added = unsafe { component_ticks.added.deref_mut() };
         let changed = unsafe { component_ticks.changed.deref_mut() };
+        let summary_tick = component_ticks.summary_tick;
 
         Some(Mut::new(
             trait_object,
             added,
             changed,
+            summary_tick,
             self.last_run,
             self.this_run,
             location.map(|loc| unsafe { loc.deref_mut() }),

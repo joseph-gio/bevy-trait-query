@@ -10,7 +10,7 @@ version     = "0.19.0"
 
 [features]
 default = ["bevy_app"]
-trace = ["dep:tracing"]
+trace   = ["dep:tracing"]
 
 [dependencies]
 bevy-trait-query-impl = { workspace = true }

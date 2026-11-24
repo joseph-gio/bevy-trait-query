@@ -283,7 +283,7 @@ pub mod imports {
         component::{Component, ComponentId, Components},
         entity::Entity,
         query::{
-            Access, Added, Changed, EcsAccessType, FilteredAccess, IterQueryData, QueryData,
+            Access, Added, Changed, EcsAccessType, FilteredAccess, FilteredAccessSet, IterQueryData, QueryData,
             QueryFilter, QueryItem, ReadOnlyQueryData, SingleEntityQueryData, WorldQuery,
         },
         storage::{Table, TableRow},

@@ -1,5 +1,7 @@
 use core::marker::PhantomData;
 
+use crate::{TraitQuery, TraitQueryState};
+use bevy_ecs::query::FilteredAccessSet;
 use bevy_ecs::{
     change_detection::Tick,
     component::{ComponentId, Components},
@@ -9,8 +11,6 @@ use bevy_ecs::{
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 
-use crate::{TraitQuery, TraitQueryState};
-
 /// [`WorldQuery`] filter for entities with exactly [one](crate::One) component
 /// implementing a trait.
 pub struct WithOne<Trait: ?Sized + TraitQuery>(PhantomData<&'static Trait>);
@@ -19,6 +19,10 @@ pub struct WithOne<Trait: ?Sized + TraitQuery>(PhantomData<&'static Trait>);
 unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
     type Fetch<'w> = ();
     type State = TraitQueryState<Trait>;
+
+    #[inline]
+    fn shrink_fetch<'wlong: 'wshort, 'wshort>(_fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
+    }
 
     #[inline]
     unsafe fn init_fetch(
@@ -54,6 +58,14 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
         *access = new_access;
     }
 
+    fn init_nested_access(
+        _state: &Self::State,
+        _system_name: Option<&str>,
+        _component_access_set: &mut FilteredAccessSet,
+        _world: UnsafeWorldCell,
+    ) {
+    }
+
     #[inline]
     fn init_state(world: &mut World) -> Self::State {
         TraitQueryState::init(world)
@@ -75,9 +87,7 @@ unsafe impl<Trait: ?Sized + TraitQuery> WorldQuery for WithOne<Trait> {
         state.matches_component_set_one(set_contains_id)
     }
 
-    #[inline]
-    fn shrink_fetch<'wlong: 'wshort, 'wshort>(_fetch: Self::Fetch<'wlong>) -> Self::Fetch<'wshort> {
-    }
+    fn update_archetypes(_state: &mut Self::State, _world: UnsafeWorldCell) {}
 }
 
 impl<Trait: ?Sized + TraitQuery> ArchetypeFilter for WithOne<Trait> {}
